@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "350518962625",
+    "project_id": "shareio-7bca8",
+    "storage_bucket": "shareio-7bca8.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:350518962625:android:681d59f3f04435d00ee740",
+        "android_client_info": {
+          "package_name": "host.exp.exponent.abdulwahidh.shareio"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfV35p5GFONaq30bTtkZZZLtpT2uC47GQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
