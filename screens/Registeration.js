@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, TextInput, Text, StyleSheet, Button, ActivityIndicator, Alert } from 'react-native';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
 
@@ -27,6 +27,7 @@ const Registration = () => {
       .then(() => {
         setIsLoading(false);
         Alert.alert('Registration Successful');
+        navigation.navigate('ChatPage');
       })
       .catch((error) => {
         setIsLoading(false);
@@ -36,30 +37,38 @@ const Registration = () => {
 
   return (
     <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        onChangeText={(text) => setEmail(text)}
-        value={email}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        onChangeText={(text) => setPassword(text)}
-        value={password}
-        secureTextEntry
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Confirm Password"
-        onChangeText={(text) => setConfirmPassword(text)}
-        value={confirmPassword}
-        secureTextEntry
-      />
-      <Button title="Register" onPress={handleRegister} />
+      <Text style={styles.title}>Registration</Text>
+      <View style={styles.formContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          onChangeText={(text) => setEmail(text)}
+          value={email}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          onChangeText={(text) => setPassword(text)}
+          value={password}
+          secureTextEntry
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Confirm Password"
+          onChangeText={(text) => setConfirmPassword(text)}
+          value={confirmPassword}
+          secureTextEntry
+        />
+        {isLoading ? (
+          <ActivityIndicator size="large" color="#007bff" style={styles.loader} />
+        ) : (
+          <Button title="Register" onPress={handleRegister} />
+        )}
+      </View>
       <Text style={styles.loginText}>Already have an account?</Text>
-      <Button onPress={() => navigation.navigate('Login')} title="Login" />
-      {isLoading && <ActivityIndicator style={styles.loader} size="large" color="#0000ff" />}
+      <Text style={styles.link} onPress={() => navigation.navigate('Login')}>
+        Login
+      </Text>
     </View>
   );
 };
@@ -69,20 +78,37 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 30,
+  },
+  formContainer: {
+    width: '80%',
   },
   input: {
     height: 40,
-    width: '80%',
-    borderColor: 'gray',
     borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    paddingLeft: 10,
+    marginBottom: 20,
+    backgroundColor: '#fff',
+  },
+  link: {
+    color: '#007bff',
+    fontSize: 16,
     marginBottom: 10,
-    paddingHorizontal: 10,
+    textDecorationLine: 'underline',
   },
   loginText: {
-    marginTop: 10,
+    marginTop: 20,
+    fontSize: 14,
   },
   loader: {
-    marginTop: 20,
+    marginVertical: 20,
   },
 });
 
