@@ -1,26 +1,50 @@
-import React, { useState, useEffect } from 'react';
-import { Text, View, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useContext } from 'react';
+import { Text, View, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import firebase from '../firebaseConfig';
+import firebase, { database } from '../firebaseConfig';
+import { AppContext } from '../AppContext';
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  getDoc
+} from 'firebase/firestore';
 
 const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { setUserData } = useContext(AppContext);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setLoading(true);
     const auth = getAuth(firebase);
-    signInWithEmailAndPassword(auth, email, password)
-      .then(() => {
-        setLoading(false);
-        Alert.alert('Login Successful');
-      })
-      .catch((error) => {
-        setLoading(false);
-        Alert.alert('Login Error', error.message);
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+
+      const collectionRef = collection(database, 'users');
+      const q = query(collectionRef, where('email', '==', email)); // Only query by email
+
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        if (querySnapshot.empty) {
+          console.error('User not found in Firestore'); // Handle case where user exists in auth but not Firestore
+          return;
+        }
+
+        const userData = querySnapshot.docs.map((doc) => doc.data());
+        setUserData(userData[0]); // Assuming only one document for the user (update if needed)
       });
+
+      setLoading(false);
+      Alert.alert('Login Successful');
+    } catch (error) {
+      setLoading(false);
+      Alert.alert('Login Error', error.message);
+    }
   };
+
 
   return (
     <View style={styles.container}>
