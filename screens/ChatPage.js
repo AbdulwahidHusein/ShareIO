@@ -1,89 +1,65 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { TouchableOpacity, Text, View, Platform, TextInput, FlatList, Image } from 'react-native';
-import { collection, addDoc, orderBy, query, onSnapshot } from 'firebase/firestore';
-import { signOut } from 'firebase/auth';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
+import { TouchableOpacity, Text, View, TextInput, FlatList, Image } from 'react-native';
+import { collection, addDoc, orderBy, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, database, storage } from '../firebaseConfig';
 import { useNavigation } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { AppContext } from '../AppContext';
 
-const colors = {
-  primary: '#f57c00',
-  gray: '#C5C5C7',
-  mediumGray: '#F6F7FB',
-  lightGray: '#FAFAFA'
-};
-
-export default function ChatPage() {
+const ChatPage = () => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const navigation = useNavigation();
+  const { chattingWith, userData } = useContext(AppContext);
 
   useEffect(() => {
-    const collectionRef = collection(database, 'chats');
-    const q = query(collectionRef, orderBy('createdAt', 'desc'));
+    if (!chattingWith || !userData) return;
 
-    const unsubscribe = onSnapshot(q, querySnapshot => {
-      setMessages(
-        querySnapshot.docs.map(doc => ({
-          _id: doc.id,
-          createdAt: doc.data().createdAt.toDate(),
-          text: doc.data().text,
-          user: doc.data().user
-        }))
-      );
+    const collectionRef = collection(database, 'chats');
+    const q = query(
+      collectionRef,
+      orderBy('createdAt', 'desc'),
+      where('receiver._id', '==', chattingWith),
+      where('user._id', '==', userData.userId)
+    );
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const newMessages = querySnapshot.docs.map((doc) => ({
+        _id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt.toDate(), // Convert Firestore timestamp to JavaScript Date
+      }));
+      setMessages(newMessages);
     });
+
     return unsubscribe;
-  }, []);
+  }, [chattingWith, userData]);
 
   const onSend = useCallback(async () => {
-    if (inputText.trim() === '') return;
-
+    if (!inputText.trim() || !chattingWith || !userData) return;
+  
     const message = {
-      _id: Math.random().toString(),
-      createdAt: new Date(),
       text: inputText,
       user: {
-        _id: auth?.currentUser?.email,
-        avatar: 'https://i.pravatar.cc/300',
+        _id: userData.userId,
+        avatar: userData.avatar || 'https://i.pravatar.cc/300',
       },
+      receiver: {
+        _id: chattingWith,
+        avatar: '', // Add receiver's avatar if available
+      },
+      createdAt: new Date(),
     };
-
-    await addDoc(collection(database, 'chats'), message);
-    setInputText('');
-  }, [inputText]);
-
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    if (!result.cancelled) {
-      const imageUrl = await uploadImage(result.uri);
-      const message = {
-        _id: Math.random().toString(),
-        createdAt: new Date(),
-        user: {
-          _id: auth?.currentUser?.email,
-          avatar: 'https://i.pravatar.cc/300',
-        },
-        image: imageUrl,
-      };
+  
+    try {
       await addDoc(collection(database, 'chats'), message);
+      setInputText('');
+    } catch (error) {
+      console.error('Error sending message:', error);
     }
-  };
-
-  const uploadImage = async (uri) => {
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    const imageName = Math.random().toString(36).substring(7);
-    const ref = storage.ref().child(`images/${imageName}`);
-    await ref.put(blob);
-    return ref.getDownloadURL();
-  };
+  }, [inputText, chattingWith, userData]);
+  
 
   const renderMessageItem = ({ item }) => {
     return (
@@ -91,18 +67,40 @@ export default function ChatPage() {
         {item.image && (
           <Image source={{ uri: item.image }} style={{ width: 100, height: 100, borderRadius: 10, marginRight: 10 }} />
         )}
-        <View style={{ backgroundColor: colors.lightGray, borderRadius: 10, padding: 10 }}>
+        <View style={{ backgroundColor: '#FAFAFA', borderRadius: 10, padding: 10 }}>
           <Text>{item.text}</Text>
         </View>
       </View>
     );
   };
+  const pickImage = () =>{
+    ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    }).then((result) => {
+      if (!result.cancelled) {
+        const imageUrl = result.uri;
+        const message = {
+          _id: Math.random().toString(),
+          createdAt: new Date(),
+          user: {
+            _id: userData.userId,
+            avatar: userData.avatar || 'https://i.pravatar.cc/300',
+          },
+          image: imageUrl,
+        };
+        addDoc(collection(database, 'chats'), message);
+      }
+    });
+  }
 
   const renderInputToolbar = () => {
     return (
-      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10, backgroundColor: colors.mediumGray }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10, backgroundColor: '#F6F7FB' }}>
         <TouchableOpacity onPress={pickImage}>
-          <AntDesign name="upload" size={24} color={colors.gray} style={{ marginRight: 10 }} />
+          <AntDesign name="upload" size={24} color="#C5C5C7" style={{ marginRight: 10 }} />
         </TouchableOpacity>
         <TextInput
           placeholder="Type a message..."
@@ -112,7 +110,7 @@ export default function ChatPage() {
           onSubmitEditing={onSend}
         />
         <TouchableOpacity onPress={onSend}>
-          <AntDesign name="arrowup" size={24} color={colors.primary} />
+          <AntDesign name="arrowup" size={24} color="#f57c00" />
         </TouchableOpacity>
       </View>
     );
@@ -123,10 +121,12 @@ export default function ChatPage() {
       <FlatList
         data={messages}
         renderItem={renderMessageItem}
-        keyExtractor={item => item._id}
+        keyExtractor={(item) => item._id}
         inverted
       />
       {renderInputToolbar()}
     </View>
   );
-}
+};
+
+export default ChatPage;
