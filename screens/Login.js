@@ -19,10 +19,10 @@ const Login = ({ navigation }) => {
 
   const handleLogin = async () => {
     setLoading(true);
-    const auth = getAuth(firebase);
+    const auth = getAuth();
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+       signInWithEmailAndPassword(auth, email, password);
 
       const collectionRef = collection(database, 'users');
       const q = query(collectionRef, where('email', '==', email)); // Only query by email
