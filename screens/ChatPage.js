@@ -1,47 +1,50 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
-import { TouchableOpacity, Text, View, TextInput, FlatList, Image } from 'react-native';
+import { TouchableOpacity, Text, View, TextInput, FlatList, Image, Alert } from 'react-native';
 import { collection, addDoc, orderBy, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, database } from '../firebaseConfig';
 import { useNavigation } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { AppContext } from '../AppContext';
 import { uploadImage, pickImage } from '../FileUpload';
-import MessageItem  from '../components/MessageItem';
-
+import MessageItem from '../components/MessageItem';
+import PromptCaption from '../components/PromptCaption';
 
 const ChatPage = () => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [caption, setCaption] = useState(null);
+
   const navigation = useNavigation();
   const { chattingWith, userData } = useContext(AppContext);
 
   useEffect(() => {
-    if (!chattingWith || !userData) return;
-
     const collectionRef = collection(database, 'chats');
-    const q = query(
-      collectionRef,
-      orderBy('createdAt', 'desc'),
-      where('receiver._id', '==', chattingWith),
-      where('user._id', '==', userData.userId)
+    const unsubscribe = onSnapshot(
+      query(
+        collectionRef,
+        orderBy('createdAt', 'desc'),
+        where('receiver._id', 'in', [chattingWith, userData.userId]),
+        where('user._id', 'in', [chattingWith, userData.userId])
+      ),
+      (querySnapshot) => {
+        const allMessages = querySnapshot.docs.map((doc) => ({
+          _id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt.toDate(), // Convert Firestore timestamp to JavaScript Date
+        }));
+        setMessages(allMessages);
+      }
     );
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const newMessages = querySnapshot.docs.map((doc) => ({
-        _id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt.toDate(), // Convert Firestore timestamp to JavaScript Date
-      }));
-      setMessages(newMessages);
-    });
-
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+    };
   }, [chattingWith, userData]);
 
   const onSend = useCallback(async () => {
     if (!inputText.trim() || !chattingWith || !userData) return;
-  
+
     const message = {
       text: inputText,
       user: {
@@ -50,11 +53,11 @@ const ChatPage = () => {
       },
       receiver: {
         _id: chattingWith,
-        avatar: '', // Add receiver's avatar if available
+        avatar: '',
       },
       createdAt: new Date(),
     };
-  
+
     try {
       setInputText('');
       await addDoc(collection(database, 'chats'), message);
@@ -62,19 +65,25 @@ const ChatPage = () => {
       console.error('Error sending message:', error);
     }
   }, [inputText, chattingWith, userData]);
-  
 
- 
-  
+  const handleCaptionConfirm = (caption) => {
+    setCaption(caption);
+  };
+
+  const handlePromptClose = () => {
+    setShowPrompt(false);
+  };
+
   const sendImage = async () => {
-    try{
-      uri = await pickImage();
-      if(uri){
+    try {
+      const uri = await pickImage();
+      if (uri) {
+        setShowPrompt(true);
         const path = `images/${userData?.userId}${new Date().getTime()}.jpg`;
         const url = await uploadImage(uri, path);
-        if(url){
+        if (url) {
           const message = {
-            text: '',
+            text: caption,
             image: url,
             user: {
               _id: userData.userId,
@@ -87,14 +96,14 @@ const ChatPage = () => {
             createdAt: new Date(),
           };
           await addDoc(collection(database, 'images'), message);
+        } else {
+          Alert("unsuccessful upload");
         }
       }
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Error sending image:', error);
     }
-    
-  }
+  };
 
   const renderInputToolbar = () => {
     return (
@@ -115,20 +124,21 @@ const ChatPage = () => {
       </View>
     );
   };
-  const renderMessageItem = ({ item }) => {
-    return <MessageItem item={item} />;
-  };
 
+  const renderMessageItem = ({ item }) => {
+    return <MessageItem isSender={item.user._id === userData.userId} item={item} />;
+  };
 
   return (
     <View style={{ flex: 1 }}>
       <FlatList
-        data={messages}
+        data={messages.sort((a, b) => b.createdAt - a.createdAt)}
         renderItem={renderMessageItem}
         keyExtractor={(item) => item._id}
         inverted
       />
       {renderInputToolbar()}
+      {showPrompt && <PromptCaption onClose={handlePromptClose} onConfirm={handleCaptionConfirm} />}
     </View>
   );
 };
