@@ -53,6 +53,7 @@ const MainTabs = () => {
       <Tab.Screen name="Registration" component={Registration} />
       <Tab.Screen name="Chat" component={ChatPage} />
       <Tab.Screen name="Login" component={Login} />
+      
     </Tab.Navigator>
   );
 };
