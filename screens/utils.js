@@ -1,7 +1,8 @@
 import { collection, addDoc } from 'firebase/firestore';
 import { auth, database } from '../firebaseConfig';
+import { Alert } from 'react-native';
 
-const onTextSend = async (inputText, messages, chattingWith, userData) => {
+export const onTextSend = async (inputText, messages, chattingWith, userData) => {
   const message = {
     text: inputText,
     user: {
@@ -21,10 +22,7 @@ const onTextSend = async (inputText, messages, chattingWith, userData) => {
   }
 };
 
-export default onTextSend;
-
 export const onFileSend = async (fileUris, chattingWith, userId, caption) => {
-  
   const message = {
     text: caption,
     user: {

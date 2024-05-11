@@ -3,14 +3,13 @@ import { Button, View, Image, Platform, StyleSheet, Text, TouchableOpacity, Aler
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import {uploadFiles} from '../FileUpload';
-import onFileSend from '../screens/utils';
+import { onTextSend, onFileSend } from '../screens/utils';
 
-const FilePickerScreen = ({ onSend, chattingWith, userId }) => {
+const FilePickerScreen = ({ onSend, userId, chattingWith, updateMessages }) => {
   const [caption, setCaption] = useState('');
   const [selectedFiles, setSelectedFiles] = useState([]);
 
   useEffect(() => {
-    Alert.alert(userId)
     (async () => {
       if (Platform.OS !== 'web') {
         const libraryStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -26,10 +25,29 @@ const FilePickerScreen = ({ onSend, chattingWith, userId }) => {
     })();
   }, []);
 
-  const SendFile = async () => {
-    const downloadUrls = await uploadFiles(selectedFiles.map(file => file.uri), userId);
-    onFileSend(downloadUrls, chattingWith, userId, caption);
-    onSend();
+  const SendFile = () => {
+
+    uploadFiles(selectedFiles.map(file => file.uri), userId)
+      .then(downloadUrls => {
+        onFileSend(downloadUrls, chattingWith, userId, caption);
+      })
+      .catch(error => {
+        console.error('Error uploading files:', error);
+      });
+      const message = {
+        _id: "temp_" + Math.random().toString(),
+        text: caption,
+        user: {
+          _id: userId,
+        },
+        receiver: {
+          _id: chattingWith,
+        },
+        createdAt: new Date(),
+        files: selectedFiles.map(file => file.uri),
+      }
+      updateMessages(message);
+      onSend();
   };
 
   const pickFile = async () => {

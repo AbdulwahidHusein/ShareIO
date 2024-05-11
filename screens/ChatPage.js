@@ -4,10 +4,8 @@ import { collection, addDoc, orderBy, query, where, onSnapshot } from 'firebase/
 import { auth, database } from '../firebaseConfig';
 import { AntDesign } from '@expo/vector-icons';
 import { AppContext } from '../AppContext';
-import MessageItem from '../components/MessageItem';
 import FilePickerScreen from '../components/ImagePickerComp';
-
-import onTextSend from './utils';
+import { onTextSend, onFileSend } from '../screens/utils';
 
 
 const ChatPage = () => {
@@ -43,13 +41,30 @@ const ChatPage = () => {
   }, [chattingWith, userData]);
 
 
+  const updateMessages = (newMessage) => {
+    setMessages((prevMessages) => [...prevMessages, newMessage]);
+  }
 
   const textSendCallback = useCallback(() => {
     if (inputText.trim() !== '') {
-      onTextSend(inputText, messages, chattingWith, userData);
+      const newMessage = {
+        _id: "temp_" + Math.random().toString(),
+        text: inputText,
+        user: { _id: userData.userId },
+        createdAt: new Date(),
+        files:[],
+      };
       setInputText('');
+      updateMessages(newMessage); 
+  
+      onTextSend(inputText, messages, chattingWith, userData)
+        .then(() => {
+        })
+        .catch(error => {
+          console.error('Error sending message:', error);
+        });
     }
-  }, [inputText, messages, chattingWith, userData]);
+  }, [inputText, messages, chattingWith, userData, updateMessages]);
 
   const handleFileUploadButton = () => {
     setIsFilePickerVisible(true);
@@ -81,9 +96,46 @@ const ChatPage = () => {
   };
 
   const renderMessageItem = ({ item }) => {
-    return <MessageItem isSender={item.user._id === userData.userId} item={item} />;
+    const isSender = item.user._id === userData.userId;
+    const isImageFile = item.files.some((file) => {
+      return file.includes('jpeg?alt=') || file.includes('png?alt=');
+    });
+  
+    // Check if the message is in-progress (not yet sent)
+    const isInProgress = item._id.startsWith('temp_');
+  
+    return (
+      <View style={{ alignItems: isSender ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
+        <View
+          style={{
+            maxWidth: '80%',
+            borderRadius: 10,
+            backgroundColor: isSender ? '#DCF8C6' : '#F1F0F0',
+            paddingHorizontal: 10,
+            paddingVertical: 5,
+          }}
+        >
+          {item.files.length > 0 && isImageFile ? (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+              {item.files.map((file, index) => (
+                <Image key={index} source={{ uri: file }} style={{ width: 80, height: 80, margin: 5 }} />
+              ))}
+            </View>
+          ) : null}
+          {item.files.length > 0 && !isImageFile ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <AntDesign name="file1" size={24} color="black" style={{ marginRight: 5 }} />
+              <Text>{item.files.join(', ')}</Text>
+            </View>
+          ) : null}
+          <Text style={{ color: isSender ? 'black' : 'gray', marginTop: 5 }}>{item.text}</Text>
+          {isInProgress && <AntDesign name="clockcircleo" size={16} color="orange" />}
+          {!isInProgress && isSender && <AntDesign name="checkcircle" size={16} color="green" />}
+        </View>
+      </View>
+    );
   };
-
+  
   return (
     <View style={{ flex: 1 }}>
       <FlatList
@@ -93,7 +145,7 @@ const ChatPage = () => {
         inverted
       />
       <Modal visible={isFilePickerVisible} animationType="slide">
-        <FilePickerScreen onSend={handleFilePickerClose} chattingWith={chattingWith} userId={userData.userId} />
+        <FilePickerScreen onSend={handleFilePickerClose} chattingWith={chattingWith} userId={userData.userId} updateMessages = {updateMessages} />
       </Modal>
       {renderInputToolbar()}
     </View>
