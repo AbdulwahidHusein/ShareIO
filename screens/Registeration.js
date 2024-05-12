@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, StyleSheet, Button, ActivityIndicator, Alert } from 'react-native';
+import { View, TextInput, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
-import { ScrollView } from 'react-native';
 import { addDoc, collection } from 'firebase/firestore';
-import {auth, database} from '../firebaseConfig';
+import { auth, database } from '../firebaseConfig';
 
 const Registration = () => {
   const navigation = useNavigation();
@@ -16,70 +15,55 @@ const Registration = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-
-  //additional fields
-  const [avatar, setAvatar] = useState('');
-  const [age, setAge] = useState('');
-  const [gender, setGender] = useState('');
-
-
   const handleRegister = () => {
-  if (
-    firstName === '' ||
-    lastName === '' ||
-    phoneNumber === '' ||
-    email === '' ||
-    password === '' ||
-    confirmPassword === ''
-  ) {
-    Alert.alert('Registration Error', 'Please fill in all fields');
-    return;
-  }
+    if (
+      firstName === '' ||
+      lastName === '' ||
+      phoneNumber === '' ||
+      email === '' ||
+      password === '' ||
+      confirmPassword === ''
+    ) {
+      Alert.alert('Registration Error', 'Please fill in all fields');
+      return;
+    }
 
-  if (password !== confirmPassword) {
-    Alert.alert('Registration Error', 'Passwords do not match');
-    return;
-  }
+    if (password !== confirmPassword) {
+      Alert.alert('Registration Error', 'Passwords do not match');
+      return;
+    }
 
-  setIsLoading(true);
-  const auth = getAuth();
-  createUserWithEmailAndPassword(auth, email, password)
-    .then((userCredential) => {
-      const user = userCredential.user;
-      // Save additional user data to the database
-      saveUserInformation(user.uid, firstName, lastName, phoneNumber, avatar, age, gender);
-      setIsLoading(false);
-      Alert.alert('Registration Successful');
-      navigation.navigate('ChatPage');
-    })
-    .catch((error) => {
-      setIsLoading(false);
-      Alert.alert('Registration Error', error.message);
+    setIsLoading(true);
+    const auth = getAuth();
+    createUserWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        const user = userCredential.user;
+        // Save additional user data to the database
+        saveUserInformation(user.uid, firstName, lastName, phoneNumber);
+        setIsLoading(false);
+        Alert.alert('Registration Successful');
+        navigation.navigate('ChatPage');
+      })
+      .catch((error) => {
+        setIsLoading(false);
+        Alert.alert('Registration Error', error.message);
+      });
+  };
+
+  const saveUserInformation = (userId, firstName, lastName, phoneNumber) => {
+    addDoc(collection(database, 'users'), {
+      firstName,
+      lastName,
+      phoneNumber,
+      email,
+      password,
+      userId,
     });
-};
-
-const saveUserInformation = (userId, firstName, lastName, phoneNumber, avatar, age, gender) => {
-  // Save user information to the database
-  // Modify this function to save the information to your desired database or storage
-  // For example, you can use Firebase Realtime Database or Firestore
-  addDoc(collection(database, 'users'), {
-    firstName,
-    lastName,
-    phoneNumber,
-    email,
-    password,
-    avatar,
-    age,
-    gender,
-    userId,
-    
-  })
-};
+  };
 
   return (
-    <ScrollView>
-    <View style={styles.container}>
-      <Text style={styles.title}>Registration</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Create an Account</Text>
       <View style={styles.formContainer}>
         <TextInput
           style={styles.input}
@@ -119,60 +103,54 @@ const saveUserInformation = (userId, firstName, lastName, phoneNumber, avatar, a
           value={confirmPassword}
           secureTextEntry
         />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Phone Number"
-          onChangeText={(text) => setPhoneNumber(text)}
-          value={phoneNumber}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Avatar"
-          onChangeText={(text) => setAvatar(text)}
-          value={avatar}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Age"
-          onChangeText={(text) => setAge(text)}
-          value={age}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Gender"
-          onChangeText={(text) => setGender(text)}
-          value={gender}
-        />
-        {isLoading ? (
-          <ActivityIndicator size="large" color="#007bff" style={styles.loader} />
-        ) : (
-          <Button title="Register" onPress={handleRegister} />
-        )}
+        <TouchableOpacity style={styles.button} onPress={handleRegister}>
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Register</Text>
+          )}
+        </TouchableOpacity>
       </View>
-      <Text style={styles.loginText}>Already have an account?</Text>
-      <Text style={styles.link} onPress={() => navigation.navigate('Login')}>
-        Login
-      </Text>
-    </View>
+      <View style={styles.footerContainer}>
+        <Text style={styles.footerText}>
+          Already have an account?{' '}
+          <Text style={styles.link} onPress={() => navigation.navigate('Login')}>
+            Log in
+          </Text>
+        </Text>
+      </View>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: 'center',
+    flexGrow: 1,
+    backgroundColor: '#f0f0f0',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 30,
+    marginBottom: 20,
+    color: '#333',
   },
   formContainer: {
-    width: '80%',
+    width: '100%',
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   input: {
     height: 40,
@@ -181,20 +159,29 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     paddingLeft: 10,
     marginBottom: 20,
-    backgroundColor: '#fff',
+  },
+  button: {
+    backgroundColor: '#3897f0',
+    paddingVertical: 12,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  footerContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 16,
+    color: '#666',
   },
   link: {
-    color: '#007bff',
-    fontSize: 16,
-    marginBottom: 10,
+    color: '#3897f0',
     textDecorationLine: 'underline',
-  },
-  loginText: {
-    marginTop: 20,
-    fontSize: 14,
-  },
-  loader: {
-    marginVertical: 20,
   },
 });
 

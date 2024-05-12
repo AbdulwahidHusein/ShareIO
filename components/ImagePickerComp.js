@@ -45,6 +45,7 @@ const FilePickerScreen = ({ onSend, userId, chattingWith, updateMessages }) => {
         },
         createdAt: new Date(),
         files: selectedFiles.map(file => file.uri),
+        createdAt: new Date(),
       }
       updateMessages(message);
       onSend();
