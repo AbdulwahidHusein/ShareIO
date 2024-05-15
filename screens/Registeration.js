@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { View, TextInput, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useContext } from 'react';
+import { View, TextInput,Modal, Text, StyleSheet, TouchableOpacity, Alert,Image, ScrollView, ActivityIndicator } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
 import { addDoc, collection } from 'firebase/firestore';
 import { auth, database } from '../firebaseConfig';
+import { AppContext } from '../AppContext';
 
 const Registration = () => {
   const navigation = useNavigation();
@@ -13,7 +15,35 @@ const Registration = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [profileUri, setProfileUri] = useState(''); // Added profileUri state
   const [isLoading, setIsLoading] = useState(false);
+
+  const [gender, setGender] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const { setUserData } = useContext(AppContext);
+
+
+  const genders = ['Male', 'Female'];
+  const selectGender = (selectedGender) => {
+    setGender(selectedGender);
+    setModalVisible(false);
+  };
+
+  const handleImagePick = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (permissionResult.granted === false) {
+      Alert.alert('Image Picker Permission Denied', 'Please allow access to the photo library in your device settings.');
+      return;
+    }
+
+    const imageResult = await ImagePicker.launchImageLibraryAsync();
+
+    if (!imageResult.cancelled) {
+      setProfileUri(imageResult.assets[0].uri);
+    }
+  };
 
   const handleRegister = () => {
     if (
@@ -22,7 +52,8 @@ const Registration = () => {
       phoneNumber === '' ||
       email === '' ||
       password === '' ||
-      confirmPassword === ''
+      confirmPassword === '' ||
+      gender === '' // Added gender validation
     ) {
       Alert.alert('Registration Error', 'Please fill in all fields');
       return;
@@ -57,8 +88,10 @@ const Registration = () => {
       phoneNumber,
       email,
       password,
+      gender, // Save gender to the database
       userId,
     });
+    setUserData({ firstName, lastName, phoneNumber, email, password, gender, userId }); // Update user data
   };
 
   return (
@@ -103,6 +136,37 @@ const Registration = () => {
           value={confirmPassword}
           secureTextEntry
         />
+        {/* Gender selection */}
+        <TouchableOpacity style={styles.dropdownButton} onPress={() => setModalVisible(true)}>
+        <Text style={styles.dropdownButtonText}>
+           {gender ?"Gender " + gender : 'Select Gender'}
+        </Text>
+      </TouchableOpacity>
+
+        <Modal visible={modalVisible} animationType="slide" transparent={true}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            {genders.map((option) => (
+              <TouchableOpacity
+                key={option}
+                style={styles.modalOption}
+                onPress={() => selectGender(option)}
+              >
+                <Text style={styles.modalOptionText}>{option}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Modal>
+        
+        {/* Profile picture selection */}
+        <TouchableOpacity style={styles.ProfileButton} onPress={handleImagePick}>
+          <Text style={styles.buttonText}>Select Profile Picture</Text>
+        </TouchableOpacity>
+        {/* Display selected profile picture */}
+        {profileUri !== '' && (
+          <Image source={{ uri: profileUri }} style={styles.profileImage}/>
+        )}
         <TouchableOpacity style={styles.button} onPress={handleRegister}>
           {isLoading ? (
             <ActivityIndicator color="#fff" />
@@ -183,6 +247,51 @@ const styles = StyleSheet.create({
     color: '#3897f0',
     textDecorationLine: 'underline',
   },
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  
+  dropdownButton: {
+    width: 200,
+    height: 40,
+    backgroundColor: '#ebebeb',
+    borderRadius: 5,
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+  },
+  dropdownButtonText: {
+    fontSize: 16,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 5,
+    padding: 10,
+  },
+  modalOption: {
+    paddingVertical: 10,
+  },
+  modalOptionText: {
+    fontSize: 16,
+  },
+  ProfileButton: {
+    margin: 20,
+    backgroundColor: '#0f456e',
+    paddingVertical: 12,
+    width : 200, 
+    height: 50,
+    borderRadius: 5,
+  
+  }
 });
 
 export default Registration;
