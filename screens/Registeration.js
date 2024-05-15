@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import { addDoc, collection } from 'firebase/firestore';
 import { auth, database } from '../firebaseConfig';
 import { AppContext } from '../AppContext';
+import { uploadFiles } from '../FileUpload';
 
 const Registration = () => {
   const navigation = useNavigation();
@@ -17,7 +18,7 @@ const Registration = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [profileUri, setProfileUri] = useState(''); // Added profileUri state
   const [isLoading, setIsLoading] = useState(false);
-
+  const [profileDownloadUrl, setProfileDownloadUrl] = useState("");
   const [gender, setGender] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -29,6 +30,8 @@ const Registration = () => {
     setGender(selectedGender);
     setModalVisible(false);
   };
+
+
 
   const handleImagePick = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -45,7 +48,7 @@ const Registration = () => {
     }
   };
 
-  const handleRegister = () => {
+ const handleRegister = async () => {
     if (
       firstName === '' ||
       lastName === '' ||
@@ -63,6 +66,9 @@ const Registration = () => {
       Alert.alert('Registration Error', 'Passwords do not match');
       return;
     }
+
+    const downloadUrl = await uploadFiles([profileUri], "profile-picture");
+    setProfileDownloadUrl(downloadUrl);
 
     setIsLoading(true);
     const auth = getAuth();
@@ -90,6 +96,7 @@ const Registration = () => {
       password,
       gender, // Save gender to the database
       userId,
+      avatar : profileDownloadUrl
     });
     setUserData({ firstName, lastName, phoneNumber, email, password, gender, userId }); // Update user data
   };
@@ -253,6 +260,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     marginTop: 10,
     marginBottom: 20,
+    marginLeft: 70,
   },
   
   dropdownButton: {
@@ -286,10 +294,10 @@ const styles = StyleSheet.create({
   ProfileButton: {
     margin: 20,
     backgroundColor: '#0f456e',
-    paddingVertical: 12,
-    width : 200, 
-    height: 50,
+    width : 150, 
+    height:30,
     borderRadius: 5,
+    marginLeft: 40,
   
   }
 });

@@ -29,7 +29,7 @@ const ProfilePage = () => {
           <Feather name="edit" size={24} color="#000" />
         </TouchableOpacity>
         <View style={styles.profileImageContainer}>
-          <Image source={{ uri: userData?.profilePicture || fallbackImage }} style={styles.profileImage} />
+          <Image source={{ uri: userData?.avatar || fallbackImage }} style={styles.profileImage} />
         </View>
         <Text style={styles.title}>{userData?.firstName} {userData?.lastName}</Text>
         <Text style={styles.subtitle}>{userData?.email}</Text>
