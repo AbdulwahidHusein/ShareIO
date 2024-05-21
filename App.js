@@ -1,18 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, TouchableOpacity, StyleSheet, PanResponder, Animated } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-
+import { AppProvider } from './AppContext';
 import ChatPage from './screens/ChatPage';
 import Login from './screens/Login';
 import Registration from './screens/Registeration';
 import ProfilePage from './screens/Profile';
 import ChatList from './screens/ChatList';
 import {auth, database} from "./firebaseConfig";
-
-import { AppProvider } from './AppContext';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -51,74 +49,35 @@ const MainTabs = () => {
       }}>
       <Tab.Screen name="ChatList" component={ChatList} />
       <Tab.Screen name="Profile" component={ProfilePage} />
-      <Tab.Screen name="Registration" component={Registration} />
       <Tab.Screen name="Chat" component={ChatPage} />
-      <Tab.Screen name="Login" component={Login} />
       
     </Tab.Navigator>
   );
 };
 
 const App = () => {
-  const [sidebarVisible, setSidebarVisible] = useState(false);
-  const [pan] = useState(new Animated.ValueXY());
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const toggleSidebar = () => {
-    setSidebarVisible(!sidebarVisible);
-  };
-
-  const panResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onPanResponderMove: Animated.event([null, { dx: pan.x }]),
-    onPanResponderRelease: (e, gesture) => {
-      if (gesture.moveX < 100) {
-        if (gesture.dx < -50) {
-          toggleSidebar();
-        } else {
-          Animated.spring(pan, {
-            toValue: { x: 0, y: 0 },
-            friction: 4,
-            useNativeDriver: false,
-          }).start();
-        }
-      } else {
-        if (gesture.dx > 50) {
-          toggleSidebar();
-        } else {
-          Animated.spring(pan, {
-            toValue: { x: -200, y: 0 },
-            friction: 4,
-            useNativeDriver: false,
-          }).start();
-        }
-      }
-    },
-  });
-
-  const sidebarStyle = {
-    transform: [
-      {
-        translateX: pan.x.interpolate({
-          inputRange: [-200, 0],
-          outputRange: [-200, 0],
-          extrapolate: 'clamp',
-        }),
-      },
-    ],
-  };
-
+  auth.onAuthStateChanged((user) => {
+    if (user) {
+      setIsLoggedIn(true);
+    }
+  })
   return (
     <AppProvider>
       <NavigationContainer>
         <View style={styles.container}>
-          <Animated.View style={[styles.sidebar, sidebarStyle]}>
-            {/* Add your sidebar content here */}
-          </Animated.View>
-          <TouchableOpacity style={styles.sidebarButton} onPress={toggleSidebar}>
-            <Feather name={sidebarVisible ? 'chevron-left' : 'menu'} size={24} color="black" />
-          </TouchableOpacity>
           <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {isLoggedIn  &&
             <Stack.Screen name="MainTabs" component={MainTabs} />
+          }
+          {
+            !isLoggedIn &&
+            <>
+              <Tab.Screen name="Login" component={Login} />
+              <Tab.Screen name="Registration" component={Registration} />
+            </>
+          }
           </Stack.Navigator>
         </View>
       </NavigationContainer>

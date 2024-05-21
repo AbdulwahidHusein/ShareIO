@@ -1,24 +1,17 @@
 import React, { useContext, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, Image } from 'react-native';
 import { AppContext } from '../AppContext';
-import { Feather } from '@expo/vector-icons'; // Assuming you have Feather icons installed
+import { Feather } from '@expo/vector-icons'; 
 
 const ProfilePage = () => {
   const { userData, setUserData } = useContext(AppContext);
   const [name, setName] = useState(userData?.firstName || '');
   const [email, setEmail] = useState(userData?.email || '');
-  
-  // Fallback profile image URL
+
   const fallbackImage = 'https://via.placeholder.com/150';
-
   const handleUpdateProfile = () => {
-    // Perform validation and update user data logic here
-    // For simplicity, let's assume the validation passes
 
-    // Update the user data in the context
-    setUserData({ ...userData, firstName: name, email });
-
-    // Show success message
+    setUserData({ ...userData, firstName: name, email, avatar });
     Alert.alert('Profile Updated', 'Your profile has been updated successfully.');
   };
 
@@ -31,6 +24,7 @@ const ProfilePage = () => {
         <View style={styles.profileImageContainer}>
           <Image source={{ uri: userData?.avatar || fallbackImage }} style={styles.profileImage} />
         </View>
+        
         <Text style={styles.title}>{userData?.firstName} {userData?.lastName}</Text>
         <Text style={styles.subtitle}>{userData?.email}</Text>
       </View>
