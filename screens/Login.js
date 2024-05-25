@@ -1,15 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import { Text, View, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import firebase, { database } from '../firebaseConfig';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { AppContext } from '../AppContext';
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  getDoc
-} from 'firebase/firestore';
+import { database } from '../firebaseConfig';
 
 const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -22,29 +16,30 @@ const Login = ({ navigation }) => {
     const auth = getAuth();
 
     try {
-       signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
+      // Fetch user data from Firestore
       const collectionRef = collection(database, 'users');
-      const q = query(collectionRef, where('email', '==', email)); // Only query by email
+      const q = query(collectionRef, where('email', '==', email));
+      const querySnapshot = await getDocs(q);
 
-      const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        if (querySnapshot.empty) {
-          console.error('User not found in Firestore'); // Handle case where user exists in auth but not Firestore
-          return;
-        }
+      if (querySnapshot.empty) {
+        setLoading(false);
+        Alert.alert('Error', 'User not found in Firestore');
+        return;
+      }
 
-        const userData = querySnapshot.docs.map((doc) => doc.data());
-        setUserData(userData[0]); // Assuming only one document for the user (update if needed)
-      });
+      const userData = querySnapshot.docs.map(doc => doc.data())[0];
+      setUserData(userData);
 
       setLoading(false);
-      Alert.alert('Login Successful');
+      navigation.navigate('ProfilePage'); 
     } catch (error) {
       setLoading(false);
       Alert.alert('Login Error', error.message);
     }
   };
-
 
   return (
     <View style={styles.container}>
@@ -64,7 +59,7 @@ const Login = ({ navigation }) => {
           secureTextEntry
         />
         {loading ? (
-          <ActivityIndicator size="large" color="#ffffff" style={styles.loader} />
+          <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />
         ) : (
           <TouchableOpacity style={styles.button} onPress={handleLogin}>
             <Text style={styles.buttonText}>Login</Text>

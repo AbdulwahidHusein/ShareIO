@@ -70,6 +70,8 @@ const FilePickerScreen = ({ onSend, userId, chattingWith, updateMessages }) => {
 
   return (
     <View style={styles.container}>
+    <TouchableOpacity style={styles.cancelButton} onPress={() => onSend()}><Text>Cancel</Text></TouchableOpacity>
+
       <Button title="+ Pick a file" onPress={pickFile} />
 
       {selectedFiles.length > 0 ? (
@@ -169,4 +171,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#888',
   },
+  cancelButton: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    marginTop: 10,
+    backgroundColor: '#b32610',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  }
 });

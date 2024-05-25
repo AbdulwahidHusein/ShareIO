@@ -1,28 +1,65 @@
 import React, { useContext, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, Image, Button, ScrollView } from 'react-native';
 import { AppContext } from '../AppContext';
 import { Feather } from '@expo/vector-icons'; 
+import {auth, database} from "../firebaseConfig";
+import { setDoc, collection } from 'firebase/firestore';
+import { useNavigation } from '@react-navigation/native';
+import { updateUserInformation } from './utils';
 
 const ProfilePage = () => {
   const { userData, setUserData } = useContext(AppContext);
-  const [name, setName] = useState(userData?.firstName || '');
+  const [firstName, setFirstName] = useState(userData?.firstName || '');
+  const [lastName, setLastName] = useState(userData?.lastName || '');
+  const [phoneNumber, setPhoneNumber] = useState(userData?.phoneNumber + '00');
   const [email, setEmail] = useState(userData?.email || '');
+  const [password, setPassword] = useState(userData?.password || '');
+  const [profileDownloadUrl, setProfileDownloadUrl] = useState(userData?.avatar || '');
+  const [gender, setGender] = useState(userData?.gender || "");
+  const [userId, setUserId] = useState(userData?.userId || "");
+  const [profileUri, setProfileUri] = useState("");
 
   const fallbackImage = 'https://via.placeholder.com/150';
   const handleUpdateProfile = () => {
-
-    setUserData({ ...userData, firstName: name, email, avatar });
-    Alert.alert('Profile Updated', 'Your profile has been updated successfully.');
+    updateUserInformation(userId, firstName, lastName, phoneNumber, gender, profileDownloadUrl).then
+    (
+      (response) =>{
+        Alert.alert('Profile Updated.');
+      }
+    ).catch(
+      (err) =>{
+        Alert.alert('Error', err.message);
+      }
+    );
+    setUserData({ ...userData, firstName, lastName, phoneNumber, email, password, gender, avatar: profileDownloadUrl });
   };
 
+  const handleLogout = () => {
+    Alert.alert("logged out");
+    auth.signOut();
+    setUserData(null);
+  }
+  const getAvatar = () => {
+    if (Array.isArray(userData?.avatar)) {
+      return userData.avatar[0];
+    }
+    return userData?.avatar || fallbackImage;
+  };
+  
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
+      <TouchableOpacity style={styles.logoutIcon} onPress={handleLogout} >
+        <Feather name="log-out" size={25} color="red" />
+        <Text>sign out</Text>
+      </TouchableOpacity>
+      
       <View style={styles.header}>
-        <TouchableOpacity style={styles.editIcon} onPress={() => {}}>
+        <TouchableOpacity style={styles.editIcon} onPress={handleUpdateProfile}>
           <Feather name="edit" size={24} color="#000" />
+          <Text>Edit</Text>
         </TouchableOpacity>
         <View style={styles.profileImageContainer}>
-          <Image source={{ uri: userData?.avatar || fallbackImage }} style={styles.profileImage} />
+          <Image source={{ uri: getAvatar() }} style={styles.profileImage} />
         </View>
         
         <Text style={styles.title}>{userData?.firstName} {userData?.lastName}</Text>
@@ -43,15 +80,17 @@ const ProfilePage = () => {
         </View>
         <View style={styles.infoItem}>
           <Text style={styles.label}>Password</Text>
-          <Text style={styles.value}>{userData?.password}</Text>
+          <Text style={styles.value}>{".".repeat(userData?.password.length)}</Text>
         </View>
       </View>
       <TouchableOpacity style={styles.button} onPress={handleUpdateProfile}>
         <Text style={styles.buttonText}>Update Profile</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 };
+
+export default ProfilePage;
 
 const styles = {
   container: {
@@ -121,6 +160,8 @@ const styles = {
     fontWeight: 'bold',
     fontSize: 16,
   },
+  logoutIcon: {
+    paddingTop : 10,
+    marginLeft: 10
+  },
 };
-
-export default ProfilePage;

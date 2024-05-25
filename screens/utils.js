@@ -1,4 +1,6 @@
-import { collection, addDoc } from 'firebase/firestore';
+import { collection,getFirestore, addDoc ,doc, setDoc, updateDoc} from 'firebase/firestore';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+
 import { auth, database } from '../firebaseConfig';
 import { Alert } from 'react-native';
 
@@ -41,3 +43,27 @@ export const onFileSend = async (fileUris, chattingWith, userId, caption) => {
     console.error('Error sending message:', error);
   }
 };
+
+export async function updateUserInformation(
+  userId,
+  firstName,
+  lastName,
+  phoneNumber,
+  gender,
+  avatar
+) {
+  const db = getFirestore();
+  const userRef = doc(db, 'users', userId);
+
+  try {
+    await updateDoc(userRef, {
+      firstName,
+      lastName,
+      phoneNumber,
+      gender,
+      avatar,
+    });
+  } catch (err) {
+    console.log("Error updating user information:", err.message);
+  }
+}

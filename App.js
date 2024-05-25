@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { AppProvider } from './AppContext';
 import ChatPage from './screens/ChatPage';
@@ -10,7 +10,7 @@ import Login from './screens/Login';
 import Registration from './screens/Registeration';
 import ProfilePage from './screens/Profile';
 import ChatList from './screens/ChatList';
-import {auth, database} from "./firebaseConfig";
+import { auth, database } from './firebaseConfig';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -36,6 +36,7 @@ const MainTabs = () => {
 
           return <Feather name={iconName} size={size} color={color} />;
         },
+        headerShown: false,
       })}
       tabBarOptions={{
         activeTintColor: '#007AFF',
@@ -48,9 +49,20 @@ const MainTabs = () => {
         },
       }}>
       <Tab.Screen name="ChatList" component={ChatList} />
-      <Tab.Screen name="Profile" component={ProfilePage} />
-      <Tab.Screen name="Chat" component={ChatPage} />
-      
+      <Tab.Screen name="Chat" component={ChatPage } options={{
+        headerRight: () => (
+          <TouchableOpacity>
+            <Feather name="more-vertical" size={24} color="#007AFF" />
+          </TouchableOpacity>
+        ),
+      }} />
+      <Tab.Screen name="Profile" component={ProfilePage} options={{
+        headerRight: () => (
+          <TouchableOpacity>
+            <Feather name="edit" size={24} color="#007AFF" />
+          </TouchableOpacity>
+        ),
+      }} />
     </Tab.Navigator>
   );
 };
@@ -61,23 +73,23 @@ const App = () => {
   auth.onAuthStateChanged((user) => {
     if (user) {
       setIsLoggedIn(true);
+    } else {
+      setIsLoggedIn(false);
     }
-  })
+  });
+
   return (
     <AppProvider>
       <NavigationContainer>
         <View style={styles.container}>
           <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {isLoggedIn  &&
-            <Stack.Screen name="MainTabs" component={MainTabs} />
-          }
-          {
-            !isLoggedIn &&
-            <>
-              <Tab.Screen name="Login" component={Login} />
-              <Tab.Screen name="Registration" component={Registration} />
-            </>
-          }
+            {isLoggedIn && <Stack.Screen name="MainTabs" component={MainTabs} />}
+            {!isLoggedIn && (
+              <>
+                <Tab.Screen name="Login" component={Login} />
+                <Tab.Screen name="Registration" component={Registration} />
+              </>
+            )}
           </Stack.Navigator>
         </View>
       </NavigationContainer>

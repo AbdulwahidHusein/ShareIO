@@ -6,16 +6,19 @@ import { AntDesign, MaterialIcons } from '@expo/vector-icons'; // Import Materia
 import { AppContext } from '../AppContext';
 import FilePickerScreen from '../components/ImagePickerComp';
 import { onTextSend, onFileSend } from '../screens/utils';
+import RenderMessageItem from '../components/renderMessageItem';
 
 const ChatPage = () => {
   const [isFilePickerVisible, setIsFilePickerVisible] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
+  const [isLoading, setIsloading] = useState(false);
 
   const { chattingWith, userData } = useContext(AppContext);
 
   useEffect(() => {
     const collectionRef = collection(database, 'chats');
+    setIsloading(true);
     const unsubscribe = onSnapshot(
       query(
         collectionRef,
@@ -30,6 +33,7 @@ const ChatPage = () => {
           createdAt: doc.data().createdAt.toDate(),
         }));
         setMessages(allMessages);
+        setIsloading(false);
       }
     );
 
@@ -87,65 +91,29 @@ const ChatPage = () => {
         <TouchableOpacity onPress={textSendCallback}>
           <AntDesign name="arrowup" size={24} color="#f57c00" />
         </TouchableOpacity>
-        {/* Profile Icon */}
-        <TouchableOpacity>
-          <MaterialIcons name="account-circle" size={24} color="#000" style={{ marginLeft: 10 }} />
-        </TouchableOpacity>
       </View>
     );
   };
 
-  const renderMessageItem = ({ item }) => {
-    const isSender = item.user._id === userData.userId;
-    const isImageFile = item.files.some((file) => {
-      return file.includes('jpeg?alt=') || file.includes('png?alt=');
-    });
-
-    // Check if the message is in-progress (not yet sent)
-    const isInProgress = item._id.startsWith('temp_');
-
-    const messageTime = item.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
+  const renderProfileHeader = () => {
     return (
-      <View style={{ alignItems: isSender ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
-        <View
-          style={{
-            maxWidth: '80%',
-            borderRadius: 10,
-            backgroundColor: isSender ? '#DCF8C6' : '#F1F0F0',
-            paddingHorizontal: 10,
-            paddingVertical: 5,
-          }}
-        >
-          {item.files.length > 0 && isImageFile? (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-              {item.files.map((file, index) => (
-                <Image key={index} source={{ uri: file }} style={{ width: 80, height: 80, margin: 5 }} />
-              ))}
-            </View>
-          ) : null}
-          {item.files.length > 0 && !isImageFile ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <AntDesign name="file1" size={24} color="black" style={{ marginRight: 5 }} />
-              <Text>{item.files.join(', ')}</Text>
-            </View>
-          ) : null}
-          <Text style={{ color: isSender ? 'black' : 'gray', marginTop: 5 }}>{item.text}</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            {isInProgress && <AntDesign name="clockcircleo" size={16} color="orange" />}
-            {!isInProgress && isSender && <AntDesign name="checkcircle" size={16} color="green" />}
-            <Text style={{ marginLeft: 5, color: 'gray', fontSize: 12 }}>{messageTime}</Text>
-          </View>
-        </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#ddd' }}>
+        <Image
+          source={{ uri: "https://picsum.photos/200/300" }}
+          style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }}
+        />
+        <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{userData.firstName} {userData.lastName}</Text>
+        <Text style={{marginLeft: 40}} > 5m Ago</Text>
       </View>
     );
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, marginTop: 10 }}>
+      {renderProfileHeader()}
       <FlatList
         data={messages.sort((a, b) => b.createdAt - a.createdAt)}
-        renderItem={renderMessageItem}
+        renderItem={({ item }) => <RenderMessageItem item={item} />}
         keyExtractor={(item) => item._id}
         inverted
       />
