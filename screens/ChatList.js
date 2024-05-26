@@ -30,8 +30,8 @@ const ChatList = () => {
     return unsubscribe;
   }, []);
 
-  const handleUserClick = (userId) => {
-    setChattingWith(userId);
+  const handleUserClick = (user) => {
+    setChattingWith(user);
     navigation.navigate('Chat');
   };
 
@@ -44,7 +44,7 @@ const ChatList = () => {
   };
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.userContainer} onPress={() => handleUserClick(item.userId)}>
+    <TouchableOpacity style={styles.userContainer} onPress={() => handleUserClick(item)}>
       <Image source={ getRandomAvatar()} style={styles.avatar} />
       <View style={styles.userInfo}>
         <Text style={styles.userName}>{`${item.firstName} ${item.lastName}`}</Text>

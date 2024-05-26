@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Button, View, Image, Platform, StyleSheet, Text, TouchableOpacity, Alert, TextInput } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
-import {uploadFiles} from '../FileUpload';
-import { onTextSend, onFileSend } from '../screens/utils';
+import {uploadFiles, uploadFiles2} from '../FileUpload';
+import { onTextSend, onFileSend2 } from '../screens/utils';
 
 const FilePickerScreen = ({ onSend, userId, chattingWith, updateMessages }) => {
   const [caption, setCaption] = useState('');
@@ -26,29 +26,32 @@ const FilePickerScreen = ({ onSend, userId, chattingWith, updateMessages }) => {
   }, []);
 
   const SendFile = () => {
-
-    uploadFiles(selectedFiles.map(file => file.uri), userId)
-      .then(downloadUrls => {
-        onFileSend(downloadUrls, chattingWith, userId, caption);
+    const fileDataArray = selectedFiles.map(file => [file.uri, file.name, file.uri.length]);
+  
+    uploadFiles2(fileDataArray, userId)
+      .then(fileData => {
+        onFileSend2(fileData, chattingWith, userId, caption);
       })
       .catch(error => {
         console.error('Error uploading files:', error);
       });
-      const message = {
-        _id: "temp_" + Math.random().toString(),
-        text: caption,
-        user: {
-          _id: userId,
-        },
-        receiver: {
-          _id: chattingWith,
-        },
-        createdAt: new Date(),
-        files: selectedFiles.map(file => file.uri),
-        createdAt: new Date(),
-      }
-      updateMessages(message);
-      onSend();
+  
+    const message = {
+      _id: "temp_" + Math.random().toString(),
+      text: caption,
+      user: {
+        _id: userId,
+      },
+      receiver: {
+        _id: chattingWith,
+      },
+      createdAt: new Date(),
+      files: selectedFiles.map(file => file.uri),
+      createdAt: new Date(),
+    };
+  
+    updateMessages(message);
+    onSend();
   };
 
   const pickFile = async () => {

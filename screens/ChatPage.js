@@ -5,7 +5,7 @@ import { auth, database } from '../firebaseConfig';
 import { AntDesign, MaterialIcons } from '@expo/vector-icons'; // Import MaterialIcons
 import { AppContext } from '../AppContext';
 import FilePickerScreen from '../components/ImagePickerComp';
-import { onTextSend, onFileSend } from '../screens/utils';
+import { onTextSend, onFileSend, handleDownload } from '../screens/utils';
 import RenderMessageItem from '../components/renderMessageItem';
 
 const ChatPage = () => {
@@ -23,8 +23,8 @@ const ChatPage = () => {
       query(
         collectionRef,
         orderBy('createdAt', 'desc'),
-        where('receiver._id', 'in', [chattingWith, userData.userId]),
-        where('user._id', 'in', [chattingWith, userData.userId])
+        where('receiver._id', 'in', [chattingWith?.userId || "none", userData?.userId || "none"]),
+        where('user._id', 'in', [chattingWith?.userId || "none", userData?.userId || "none"])
       ),
       (querySnapshot) => {
         const allMessages = querySnapshot.docs.map((doc) => ({
@@ -51,20 +51,20 @@ const ChatPage = () => {
       const newMessage = {
         _id: 'temp_' + Math.random().toString(),
         text: inputText,
-        user: { _id: userData.userId },
+        user: { _id: userData?.userId },
         createdAt: new Date(),
         files: [],
       };
       setInputText('');
       updateMessages(newMessage);
 
-      onTextSend(inputText, messages, chattingWith, userData)
+      onTextSend(inputText, messages, chattingWith?.userId, userData)
         .then(() => {})
         .catch((error) => {
           console.error('Error sending message:', error);
         });
     }
-  }, [inputText, messages, chattingWith, userData, updateMessages]);
+  }, [inputText, messages, chattingWith?.userId, userData, updateMessages]);
 
   const handleFileUploadButton = () => {
     setIsFilePickerVisible(true);
@@ -102,7 +102,7 @@ const ChatPage = () => {
           source={{ uri: "https://picsum.photos/200/300" }}
           style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }}
         />
-        <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{userData.firstName} {userData.lastName}</Text>
+        <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{chattingWith?.firstName} {chattingWith?.lastName}</Text>
         <Text style={{marginLeft: 40}} > 5m Ago</Text>
       </View>
     );
@@ -118,7 +118,7 @@ const ChatPage = () => {
         inverted
       />
       <Modal visible={isFilePickerVisible} animationType="slide">
-        <FilePickerScreen onSend={handleFilePickerClose} chattingWith={chattingWith} userId={userData.userId} updateMessages={updateMessages} />
+        <FilePickerScreen onSend={handleFilePickerClose} chattingWith={chattingWith?.userId} userId={userData?.userId} updateMessages={updateMessages} />
       </Modal>
       {renderInputToolbar()}
     </View>

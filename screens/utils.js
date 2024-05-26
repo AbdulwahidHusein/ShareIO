@@ -67,3 +67,32 @@ export async function updateUserInformation(
     console.log("Error updating user information:", err.message);
   }
 }
+
+
+export const onFileSend2 = async (fileData, chattingWith, userId, caption) => {
+  const message = {
+    text: caption,
+    user: {
+      _id: userId,
+    },
+    receiver: {
+      _id: chattingWith,
+    },
+    createdAt: new Date(),
+    files: fileData, 
+  };
+
+  try {
+    await addDoc(collection(database, 'chats'), message);
+  } catch (error) {
+    console.error('Error sending message:', error);
+  }
+};
+
+
+export const handleDownload = async (uri) => {
+  const response = await fetch(uri);
+  const blob = await response.blob();
+  const fileName = uri.split('/').pop();
+  return { blob, fileName };
+}
