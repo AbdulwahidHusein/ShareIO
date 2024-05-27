@@ -5,15 +5,13 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, TouchableOpacity, StyleSheet, PanResponder, Animated } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import ChatPage from './screens/ChatPage';
+import ChatPage from './screens/ChatPage';//importing chatpage which is found in screen folder
 import Login from './screens/Login';
 import Registration from './screens/Registeration';
 import ProfilePage from './screens/Profile';
 import ChatList from './screens/ChatList';
-import {auth, database} from "./firebaseConfig";
-
+import {auth, database} from "./firebaseConfig"; 
 import { AppProvider } from './AppContext';
-
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -150,3 +148,4 @@ const styles = StyleSheet.create({
 });
 
 export default App;
+s
