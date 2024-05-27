@@ -66,11 +66,10 @@ const Registration = () => {
       Alert.alert('Registration Error', 'Passwords do not match');
       return;
     }
-
+    setIsLoading(true);
     const downloadUrl = await uploadFiles([profileUri], "profile-picture");
     setProfileDownloadUrl(downloadUrl);
 
-    setIsLoading(true);
     const auth = getAuth();
     createUserWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
@@ -98,7 +97,7 @@ const Registration = () => {
       userId,
       avatar : profileDownloadUrl
     });
-    setUserData({ firstName, lastName, phoneNumber, email, password, gender, userId }); // Update user data
+    setUserData({ firstName, lastName, phoneNumber, email, password, gender, userId , avatar:profileDownloadUrl[0]}); // Update user data
   };
 
   return (
