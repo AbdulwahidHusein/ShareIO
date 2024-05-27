@@ -10,6 +10,7 @@ import Login from './screens/Login';
 import Registration from './screens/Registeration';
 import ProfilePage from './screens/Profile';
 import ChatList from './screens/ChatList';
+import {auth, database} from "./firebaseConfig";
 
 import { AppProvider } from './AppContext';
 

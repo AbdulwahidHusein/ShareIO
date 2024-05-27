@@ -2,17 +2,15 @@ import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { TouchableOpacity, Text, View, TextInput, FlatList, Image, Alert, Modal } from 'react-native';
 import { collection, addDoc, orderBy, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, database } from '../firebaseConfig';
-import { AntDesign } from '@expo/vector-icons';
+import { AntDesign, MaterialIcons } from '@expo/vector-icons'; // Import MaterialIcons
 import { AppContext } from '../AppContext';
 import FilePickerScreen from '../components/ImagePickerComp';
 import { onTextSend, onFileSend } from '../screens/utils';
 
-
 const ChatPage = () => {
-  const [isFilePickerVisible, setIsFilePickerVisible] = useState(false); 
+  const [isFilePickerVisible, setIsFilePickerVisible] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
-
 
   const { chattingWith, userData } = useContext(AppContext);
 
@@ -29,7 +27,7 @@ const ChatPage = () => {
         const allMessages = querySnapshot.docs.map((doc) => ({
           _id: doc.id,
           ...doc.data(),
-          createdAt: doc.data().createdAt.toDate(), 
+          createdAt: doc.data().createdAt.toDate(),
         }));
         setMessages(allMessages);
       }
@@ -40,27 +38,25 @@ const ChatPage = () => {
     };
   }, [chattingWith, userData]);
 
-
   const updateMessages = (newMessage) => {
     setMessages((prevMessages) => [...prevMessages, newMessage]);
-  }
+  };
 
   const textSendCallback = useCallback(() => {
     if (inputText.trim() !== '') {
       const newMessage = {
-        _id: "temp_" + Math.random().toString(),
+        _id: 'temp_' + Math.random().toString(),
         text: inputText,
         user: { _id: userData.userId },
         createdAt: new Date(),
-        files:[],
+        files: [],
       };
       setInputText('');
-      updateMessages(newMessage); 
-  
+      updateMessages(newMessage);
+
       onTextSend(inputText, messages, chattingWith, userData)
-        .then(() => {
-        })
-        .catch(error => {
+        .then(() => {})
+        .catch((error) => {
           console.error('Error sending message:', error);
         });
     }
@@ -91,6 +87,10 @@ const ChatPage = () => {
         <TouchableOpacity onPress={textSendCallback}>
           <AntDesign name="arrowup" size={24} color="#f57c00" />
         </TouchableOpacity>
+        {/* Profile Icon */}
+        <TouchableOpacity>
+          <MaterialIcons name="account-circle" size={24} color="#000" style={{ marginLeft: 10 }} />
+        </TouchableOpacity>
       </View>
     );
   };
@@ -100,10 +100,12 @@ const ChatPage = () => {
     const isImageFile = item.files.some((file) => {
       return file.includes('jpeg?alt=') || file.includes('png?alt=');
     });
-  
+
     // Check if the message is in-progress (not yet sent)
     const isInProgress = item._id.startsWith('temp_');
-  
+
+    const messageTime = item.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     return (
       <View style={{ alignItems: isSender ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
         <View
@@ -115,7 +117,7 @@ const ChatPage = () => {
             paddingVertical: 5,
           }}
         >
-          {item.files.length > 0 && isImageFile ? (
+          {item.files.length > 0 && isImageFile? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
               {item.files.map((file, index) => (
                 <Image key={index} source={{ uri: file }} style={{ width: 80, height: 80, margin: 5 }} />
@@ -129,13 +131,16 @@ const ChatPage = () => {
             </View>
           ) : null}
           <Text style={{ color: isSender ? 'black' : 'gray', marginTop: 5 }}>{item.text}</Text>
-          {isInProgress && <AntDesign name="clockcircleo" size={16} color="orange" />}
-          {!isInProgress && isSender && <AntDesign name="checkcircle" size={16} color="green" />}
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {isInProgress && <AntDesign name="clockcircleo" size={16} color="orange" />}
+            {!isInProgress && isSender && <AntDesign name="checkcircle" size={16} color="green" />}
+            <Text style={{ marginLeft: 5, color: 'gray', fontSize: 12 }}>{messageTime}</Text>
+          </View>
         </View>
       </View>
     );
   };
-  
+
   return (
     <View style={{ flex: 1 }}>
       <FlatList
@@ -145,7 +150,7 @@ const ChatPage = () => {
         inverted
       />
       <Modal visible={isFilePickerVisible} animationType="slide">
-        <FilePickerScreen onSend={handleFilePickerClose} chattingWith={chattingWith} userId={userData.userId} updateMessages = {updateMessages} />
+        <FilePickerScreen onSend={handleFilePickerClose} chattingWith={chattingWith} userId={userData.userId} updateMessages={updateMessages} />
       </Modal>
       {renderInputToolbar()}
     </View>
