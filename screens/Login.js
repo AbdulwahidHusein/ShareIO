@@ -9,7 +9,9 @@ const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError]= useState(false);
   const { setUserData } = useContext(AppContext);
+  
 
   const handleLogin = async () => {
     setLoading(true);
@@ -37,6 +39,7 @@ const Login = ({ navigation }) => {
       navigation.navigate('ProfilePage'); 
     } catch (error) {
       setLoading(false);
+      setError(true);
       Alert.alert('Login Error', error.message);
     }
   };
@@ -48,13 +51,13 @@ const Login = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="Email"
-          onChangeText={(text) => setEmail(text)}
+          onChangeText={(text) => {setEmail(text); setError(false)}}
           value={email}
         />
         <TextInput
           style={styles.input}
           placeholder="Password"
-          onChangeText={(text) => setPassword(text)}
+          onChangeText={(text) => {setPassword(text), setError(false)}}
           value={password}
           secureTextEntry
         />
@@ -66,6 +69,7 @@ const Login = ({ navigation }) => {
           </TouchableOpacity>
         )}
       </View>
+      {error && <Text style={styles.Error}>Invalid login credentials</Text>}
       <TouchableOpacity onPress={() => navigation.navigate('Registration')}>
         <Text style={styles.registerText}>Don't have an account? Register</Text>
       </TouchableOpacity>
@@ -116,6 +120,12 @@ const styles = {
     color: '#007bff',
     fontSize: 14,
   },
+  Error:{
+    marginTop: 20,
+    fontSize: 16,
+    color: '#8a0c06',
+
+  }
 };
 
 export default Login;

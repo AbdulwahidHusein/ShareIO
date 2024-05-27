@@ -33,6 +33,10 @@ const RenderMessageItem = ({ item }) => {
   const messageTime = item.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   const handleFileDownload = async (file) => {
+    if (downloading[file.downloadURL]){
+      setDownloading(prev => ({ ...prev, [file.downloadURL]: false }));
+      return;
+    }
     try {
       setDownloading(prev => ({ ...prev, [file.downloadURL]: true }));
       const { uri } = await FileSystem.downloadAsync(file.downloadURL, FileSystem.documentDirectory + file.name);
