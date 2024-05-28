@@ -8,15 +8,17 @@ import FilePickerScreen from '../components/ImagePickerComp';
 import { onTextSend, onFileSend, handleDownload } from '../screens/utils';
 import RenderMessageItem from '../components/renderMessageItem';
 
-const ChatPage = () => {
+          {() => <ChatPage isAiTab={true} />}
+const ChatPage = ({isAiTab}) => {
   const [isFilePickerVisible, setIsFilePickerVisible] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsloading] = useState(false);
+  const { chattingWith, setChattingWith, userData } = useContext(AppContext);
 
-  const { chattingWith, userData } = useContext(AppContext);
-
+  const isAI = chattingWith.userId === "WyJen7wgwwXU8FvdHaKWyJen7wgwwXU8FvdHaKrdvs7N2Z2";
   useEffect(() => {
+    
     const collectionRef = collection(database, 'chats');
     setIsloading(true);
     const unsubscribe = onSnapshot(
@@ -58,7 +60,7 @@ const ChatPage = () => {
       setInputText('');
       updateMessages(newMessage);
 
-      onTextSend(inputText, messages, chattingWith?.userId, userData)
+      onTextSend(inputText, messages, chattingWith?.userId, userData, isAI)
         .then(() => {})
         .catch((error) => {
           console.error('Error sending message:', error);

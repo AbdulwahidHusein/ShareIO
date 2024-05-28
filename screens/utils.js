@@ -1,10 +1,13 @@
-import { collection,getFirestore, addDoc ,doc, setDoc, updateDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection,getFirestore, addDoc ,doc, setDoc, updateDoc,deleteDoc, getDocs, query, where } from 'firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
 import { auth, database } from '../firebaseConfig';
 import { uploadFiles } from '../FileUpload';
 import { Alert } from 'react-native';
 
-export const onTextSend = async (inputText, messages, chattingWith, userData) => {
+// const {OpenAI} = require("openai");
+// const openai = new OpenAI({apiKey: "sk-proj-19OXdevTMhRs8MNzMtHNT3BlbkFJdka8tGAPsHft9uqCJ4V0"});
+
+export const onTextSend = async (inputText, messages, chattingWith, userData, isAI) => {
   const message = {
     text: inputText,
     user: {
@@ -66,7 +69,6 @@ export async function updateUserInformation(
       return;
     }
 
-    // Assuming userId is unique, get the first matching document
     const userDoc = querySnapshot.docs[0];
     const userDocumentRef = doc(db, 'users', userDoc.id);
 
@@ -137,3 +139,51 @@ export const handleImagePick = async (setProfileDownloadUrl) => {
   )
 
 };
+
+export const deleteMessage = async (messageItem, userId) => {
+  if (messageItem.user._id != userId) {
+    return;
+  }
+  const db = getFirestore();
+  const chatsCollectionRef = collection(db, 'chats');
+
+  const docReference = doc(chatsCollectionRef, messageItem._id);
+ 
+  try {
+    await deleteDoc(docReference);
+    console.log('Message deleted successfully');
+  } catch (error) {
+    console.error('Error deleting message:', error);
+  }
+
+}
+
+export const UpdateMessage = async (messageItem, userId, text) => {
+  if (messageItem.user._id != userId) {
+    return;
+  }
+  const db = getFirestore();
+  const chatsCollectionRef = collection(db, 'chats');
+
+  const docReference = doc(chatsCollectionRef, messageItem._id);
+ 
+  try {
+    await updateDoc(docReference,
+      text
+    );
+    console.log('Message deleted successfully');
+  } catch (error) {
+    console.error('Error deleting message:', error);
+  }
+}
+
+
+export async function get_next_response(history){
+
+  await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: history
+  }).then((completion) => {
+      return completion.choices[0].message.content;
+  })
+}
