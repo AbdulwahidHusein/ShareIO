@@ -47,7 +47,6 @@
     "@babel/core": "^7.20.0",
     "metro": "^0.80.9",
     "metro-core": "^0.80.9"
-    "@babel/core": "^7.24.0"
   },
   "private": true
 }
