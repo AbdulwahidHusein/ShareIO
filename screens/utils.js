@@ -5,7 +5,7 @@ import { uploadFiles } from '../FileUpload';
 import { Alert } from 'react-native';
 
 // const {OpenAI} = require("openai");
-// const openai = new OpenAI({apiKey: "sk-proj-19OXdevTMhRs8MNzMtHNT3BlbkFJdka8tGAPsHft9uqCJ4V0"});
+// const openai = new OpenAI({apiKey: "s"});
 
 export const onTextSend = async (inputText, messages, chattingWith, userData, isAI) => {
   const message = {
