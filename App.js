@@ -11,7 +11,7 @@ import Registration from './screens/Registeration';
 import ProfilePage from './screens/Profile';
 import ChatList from './screens/ChatList';
 import {auth, database} from "./firebaseConfig";
-
+import welcome from "./screens/welcome";
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -109,4 +109,3 @@ const styles = StyleSheet.create({
 });
 
 export default App;
-s

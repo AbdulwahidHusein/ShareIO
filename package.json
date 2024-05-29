@@ -10,11 +10,12 @@
   },
   "dependencies": {
     "@expo/config": "^9.0.1",
-    "@expo/metro-config": "^0.18.3",
+    "@expo/metro-config": "^0.18.4",
     "@expo/react-native-action-sheet": "^4.0.1",
     "@expo/vector-icons": "^14.0.0",
     "@react-native-community/masked-view": "^0.1.11",
     "@react-native-firebase/app": "^19.2.2",
+    "@react-native/metro-config": "^0.74.83",
     "@react-navigation/bottom-tabs": "^6.5.20",
     "@react-navigation/drawer": "^6.6.15",
     "@react-navigation/native": "^6.1.17",
@@ -46,7 +47,6 @@
     "@babel/core": "^7.20.0",
     "metro": "^0.80.9",
     "metro-core": "^0.80.9"
-    "@babel/core": "^7.24.0"
   },
   "private": true
 }
