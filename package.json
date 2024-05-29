@@ -41,7 +41,8 @@
     "react-native-screens": "3.31.1",
     "react-native-tab-view": "^3.5.2",
     "react-navigation": "^4.4.4",
-    "react-navigation-stack": "^2.10.4"
+    "react-navigation-stack": "^2.10.4",
+    "expo-media-library": "~16.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

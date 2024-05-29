@@ -78,7 +78,6 @@ const Registration = () => {
         saveUserInformation(user.uid, firstName, lastName, phoneNumber);
         setIsLoading(false);
         Alert.alert('Registration Successful');
-        navigation.navigate('ChatPage');
       })
       .catch((error) => {
         setIsLoading(false);

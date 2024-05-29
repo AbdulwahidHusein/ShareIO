@@ -1,50 +1,48 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import { Text, View, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import firebase, { database } from '../firebaseConfig';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { AppContext } from '../AppContext';
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  getDoc
-} from 'firebase/firestore';
+import { database } from '../firebaseConfig';
 
 const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError]= useState(false);
   const { setUserData } = useContext(AppContext);
+  
 
   const handleLogin = async () => {
     setLoading(true);
     const auth = getAuth();
 
     try {
-       signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
+      // Fetch user data from Firestore
       const collectionRef = collection(database, 'users');
-      const q = query(collectionRef, where('email', '==', email)); // Only query by email
+      const q = query(collectionRef, where('email', '==', email));
+      const querySnapshot = await getDocs(q);
 
-      const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        if (querySnapshot.empty) {
-          console.error('User not found in Firestore'); // Handle case where user exists in auth but not Firestore
-          return;
-        }
+      if (querySnapshot.empty) {
+        setLoading(false);
+        Alert.alert('Error', 'User not found in Firestore');
+        return;
+      }
 
-        const userData = querySnapshot.docs.map((doc) => doc.data());
-        setUserData(userData[0]); // Assuming only one document for the user (update if needed)
-      });
+      const userData = querySnapshot.docs.map(doc => doc.data())[0];
+      setUserData(userData);
 
       setLoading(false);
-      Alert.alert('Login Successful');
+      navigation.navigate('ProfilePage'); 
     } catch (error) {
       setLoading(false);
+      setError(true);
       Alert.alert('Login Error', error.message);
     }
   };
-
 
   return (
     <View style={styles.container}>
@@ -53,24 +51,25 @@ const Login = ({ navigation }) => {
         <TextInput
           style={styles.input}
           placeholder="Email"
-          onChangeText={(text) => setEmail(text)}
+          onChangeText={(text) => {setEmail(text); setError(false)}}
           value={email}
         />
         <TextInput
           style={styles.input}
           placeholder="Password"
-          onChangeText={(text) => setPassword(text)}
+          onChangeText={(text) => {setPassword(text), setError(false)}}
           value={password}
           secureTextEntry
         />
         {loading ? (
-          <ActivityIndicator size="large" color="#ffffff" style={styles.loader} />
+          <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />
         ) : (
           <TouchableOpacity style={styles.button} onPress={handleLogin}>
             <Text style={styles.buttonText}>Login</Text>
           </TouchableOpacity>
         )}
       </View>
+      {error && <Text style={styles.Error}>Invalid login credentials</Text>}
       <TouchableOpacity onPress={() => navigation.navigate('Registration')}>
         <Text style={styles.registerText}>Don't have an account? Register</Text>
       </TouchableOpacity>
@@ -121,6 +120,12 @@ const styles = {
     color: '#007bff',
     fontSize: 14,
   },
+  Error:{
+    marginTop: 20,
+    fontSize: 16,
+    color: '#8a0c06',
+
+  }
 };
 
 export default Login;
