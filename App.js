@@ -155,9 +155,5 @@ const styles = StyleSheet.create({
   },
 });
 
-<<<<<<< HEAD
 
-export default App();
-=======
 export default App;
->>>>>>> f9c4215a7bc97cce61f528b701bbe7f25ab31a69
