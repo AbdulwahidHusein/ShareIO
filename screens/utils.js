@@ -4,7 +4,10 @@ import { auth, database } from '../firebaseConfig';
 import { uploadFiles } from '../FileUpload';
 import { Alert } from 'react-native';
 
+import { generate } from '../api';
 // const {OpenAI} = require("openai");
+
+
 
 export const onTextSend = async (inputText, messages, chattingWith, userData, isAI) => {
   const message = {
@@ -21,6 +24,22 @@ export const onTextSend = async (inputText, messages, chattingWith, userData, is
 
   try {
     await addDoc(collection(database, 'chats'), message);
+    if (chattingWith === "WyJen7wgwwXU8FvdHaKWyJen7wgwwXU8FvdHaKrdvs7N2Z2"){
+
+      const response = await generate(inputText);
+      const message = {
+        text: response,
+        user: {
+          _id: chattingWith,
+        },
+        receiver: {
+          _id: userData.userId,
+        },
+        createdAt: new Date(),
+        files: [], 
+      };
+      await addDoc(collection(database, 'chats'), message);
+    }
   } catch (error) {
     console.error('Error sending message:', error);
   }

@@ -1,25 +1,33 @@
-// const { OpenAI } = require("openai");
-// const openai = new OpenAI();
+// api.js
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+// const dotenv = require("dotenv");
+// dotenv.config();
+
+const gemini_api_key ="AIzaSyDH1vsvIubkoFdknuSR-YkoVSbv7nJtiuc";
 
 
+const googleAI = new GoogleGenerativeAI(gemini_api_key);
 
-// export async function get_next_response(history){
+const geminiConfig = {
+  temperature: 0.9,
+  topP: 1,
+  topK: 1,
+  maxOutputTokens: 4096,
 
-//     await openai.chat.completions.create({
-//         model: "gpt-3.5-turbo",
-//         messages: history
-//     }).then((completion) => {
-//         return completion.choices[0].message.content;
-//     })
-// }
+};
 
-// // async function main() {
-// //   const completion = await openai.chat.completions.create({
-// //     messages: [{ role: "system", content: "who are you." }],
-// //     model: "gpt-3.5-turbo",
-// //   });
+const geminiModel = googleAI.getGenerativeModel({
+  model: "gemini-pro",
+  geminiConfig,
+});
 
-// //   console.log(completion.choices[0]);
-// // }
-
-// // main();
+export const generate = async (text) => {
+  try {
+    const prompt = text;
+    const result = await geminiModel.generateContent(prompt);
+    const response = result.response;
+    return response.text();
+  } catch (error) {
+    console.log("response error", error);
+  }
+};

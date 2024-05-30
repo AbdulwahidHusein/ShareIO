@@ -76,6 +76,16 @@ const ChatPage = ({isAiTab}) => {
     setIsFilePickerVisible(false);
   };
 
+  const getAvatar = (item) => {
+    if (!item.avatar) {
+      return require('../assets/icon.png');
+    }
+    if (Array.isArray(item.avatar)) {
+      return {uri : item.avatar[0]};
+    }
+    return {uri : item.avatar};
+  };
+
   const renderInputToolbar = () => {
     return (
       <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10, backgroundColor: '#F6F7FB' }}>
@@ -101,7 +111,7 @@ const ChatPage = ({isAiTab}) => {
     return (
       <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#ddd' }}>
         <Image
-          source={{ uri: "https://picsum.photos/200/300" }}
+          source={getAvatar(chattingWith)}
           style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }}
         />
         <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{chattingWith?.firstName} {chattingWith?.lastName}</Text>

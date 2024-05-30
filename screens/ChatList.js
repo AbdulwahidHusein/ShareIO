@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { TouchableOpacity, Text, View, FlatList, Image, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, View, FlatList, Image, StyleSheet, TextInput } from 'react-native';
 import { collection, query, onSnapshot } from 'firebase/firestore';
 import { database } from '../firebaseConfig';
 import { AppContext } from '../AppContext';
@@ -7,24 +7,31 @@ import { useNavigation } from '@react-navigation/native';
 
 const ChatList = () => {
   const [users, setUsers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const { setChattingWith } = useContext(AppContext);
   const navigation = useNavigation();
-
+  const chatBotId = "WyJen7wgwwXU8FvdHaKWyJen7wgwwXU8FvdHaKrdvs7N2Z2";
 
   useEffect(() => {
     const collectionRef = collection(database, 'users');
     const q = query(collectionRef);
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      setUsers(
-        querySnapshot.docs.map((doc) => ({
-          _id: doc.id,
-          firstName: doc.data().firstName,
-          lastName: doc.data().lastName,
-          userId: doc.data().userId,
-          avatar: doc.data().avatar,
-          phoneNumber: doc.data().phoneNumber,
-        }))
-      );
+      const fetchedUsers = querySnapshot.docs.map((doc) => ({
+        _id: doc.id,
+        firstName: doc.data().firstName,
+        lastName: doc.data().lastName,
+        userId: doc.data().userId,
+        avatar: doc.data().avatar,
+        phoneNumber: doc.data().phoneNumber,
+      }));
+
+      const sortedUsers = fetchedUsers.sort((a, b) => {
+        if (a.userId === chatBotId) return -1;
+        if (b.userId === chatBotId) return 1;
+        return 0;
+      });
+
+      setUsers(sortedUsers);
     });
 
     return unsubscribe;
@@ -48,14 +55,14 @@ const ChatList = () => {
       return getRandomAvatar();
     }
     if (Array.isArray(item.avatar)) {
-      return getRandomAvatar();;
+      return { uri: item.avatar[0] };
     }
-    return getRandomAvatar();
+    return { uri: item.avatar };
   };
 
   const renderItem = ({ item }) => (
     <TouchableOpacity style={styles.userContainer} onPress={() => handleUserClick(item)}>
-      <Image source={getRandomAvatar()} style={styles.avatar} />
+      <Image source={getAvatar(item)} style={styles.avatar} />
       <View style={styles.userInfo}>
         <Text style={styles.userName}>{`${item.firstName} ${item.lastName}`}</Text>
         <Text style={styles.userId}>{item.phoneNumber}</Text>
@@ -63,11 +70,22 @@ const ChatList = () => {
     </TouchableOpacity>
   );
 
+  const filteredUsers = users.filter(user =>
+    `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.phoneNumber.includes(searchQuery)
+  );
+
   return (
     <View style={styles.container}>
-    <Text style={styles.header}>Chats</Text>
+      <Text style={styles.header}>Chats</Text>
+      <TextInput
+        style={styles.searchBar}
+        placeholder="Search"
+        value={searchQuery}
+        onChangeText={()=>{}}
+      />
       <FlatList
-        data={users}
+        data={filteredUsers}
         keyExtractor={(item) => item._id}
         renderItem={renderItem}
         contentContainerStyle={styles.listContainer}
@@ -91,6 +109,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: '#dddddd',
     paddingBottom: 10,
+  },
+  searchBar: {
+    height: 40,
+    borderColor: '#dddddd',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 20,
+    backgroundColor: '#ffffff',
   },
   listContainer: {
     paddingTop: 8,
@@ -129,5 +156,3 @@ const styles = StyleSheet.create({
 });
 
 export default ChatList;
-
-
