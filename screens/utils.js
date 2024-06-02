@@ -137,3 +137,51 @@ export const handleImagePick = async (setProfileDownloadUrl) => {
   )
 
 };
+
+export const deleteMessage = async (messageItem, userId) => {
+  if (messageItem.user._id != userId) {
+    return;
+  }
+  const db = getFirestore();
+  const chatsCollectionRef = collection(db, 'chats');
+
+  const docReference = doc(chatsCollectionRef, messageItem._id);
+ 
+  try {
+    await deleteDoc(docReference);
+    console.log('Message deleted successfully');
+  } catch (error) {
+    console.error('Error deleting message:', error);
+  }
+
+}
+
+export const UpdateMessage = async (messageItem, userId, text) => {
+  if (messageItem.user._id != userId) {
+    return;
+  }
+  const db = getFirestore();
+  const chatsCollectionRef = collection(db, 'chats');
+
+  const docReference = doc(chatsCollectionRef, messageItem._id);
+ 
+  try {
+    await updateDoc(docReference,
+      text
+    );
+    console.log('Message deleted successfully');
+  } catch (error) {
+    console.error('Error deleting message:', error);
+  }
+}
+
+
+export async function get_next_response(history){
+
+  await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: history
+  }).then((completion) => {
+      return completion.choices[0].message.content;
+  })
+}
