@@ -54,11 +54,11 @@
     "@babel/core": "^7.20.0",
     "@tsconfig/react-native": "^3.0.5",
     "@types/jest": "^29.5.12",
-    "@types/react": "^18.3.3",
+    "@types/react": "^18.2.79",
     "@types/react-test-renderer": "^18.3.0",
     "metro": "^0.80.9",
     "metro-core": "^0.80.9",
-    "typescript": "^5.4.5"
+    "typescript": "^5.3.3"
   },
   "private": true
 }
