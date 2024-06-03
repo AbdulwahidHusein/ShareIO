@@ -1,10 +1,15 @@
-import { collection,getFirestore, addDoc ,doc, setDoc, updateDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection,getFirestore, addDoc ,doc, setDoc, updateDoc,deleteDoc, getDocs, query, where } from 'firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
 import { auth, database } from '../firebaseConfig';
 import { uploadFiles } from '../FileUpload';
 import { Alert } from 'react-native';
 
-export const onTextSend = async (inputText, messages, chattingWith, userData) => {
+import { generate } from '../api';
+// const {OpenAI} = require("openai");
+
+
+
+export const onTextSend = async (inputText, messages, chattingWith, userData, isAI) => {
   const message = {
     text: inputText,
     user: {
@@ -19,6 +24,22 @@ export const onTextSend = async (inputText, messages, chattingWith, userData) =>
 
   try {
     await addDoc(collection(database, 'chats'), message);
+    if (chattingWith === "WyJen7wgwwXU8FvdHaKWyJen7wgwwXU8FvdHaKrdvs7N2Z2"){
+
+      const response = await generate(inputText);
+      const message = {
+        text: response,
+        user: {
+          _id: chattingWith,
+        },
+        receiver: {
+          _id: userData.userId,
+        },
+        createdAt: new Date(),
+        files: [], 
+      };
+      await addDoc(collection(database, 'chats'), message);
+    }
   } catch (error) {
     console.error('Error sending message:', error);
   }
@@ -66,7 +87,6 @@ export async function updateUserInformation(
       return;
     }
 
-    // Assuming userId is unique, get the first matching document
     const userDoc = querySnapshot.docs[0];
     const userDocumentRef = doc(db, 'users', userDoc.id);
 

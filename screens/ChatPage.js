@@ -8,15 +8,17 @@ import FilePickerScreen from '../components/ImagePickerComp';
 import { onTextSend, onFileSend, handleDownload } from '../screens/utils';
 import RenderMessageItem from '../components/renderMessageItem';
 
-const ChatPage = () => {
+          {() => <ChatPage isAiTab={true} />}
+const ChatPage = ({isAiTab}) => {
   const [isFilePickerVisible, setIsFilePickerVisible] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsloading] = useState(false);
+  const { chattingWith, setChattingWith, userData } = useContext(AppContext);
 
-  const { chattingWith, userData } = useContext(AppContext);
-
+  const isAI = chattingWith.userId === "WyJen7wgwwXU8FvdHaKWyJen7wgwwXU8FvdHaKrdvs7N2Z2";
   useEffect(() => {
+    
     const collectionRef = collection(database, 'chats');
     setIsloading(true);
     const unsubscribe = onSnapshot(
@@ -58,7 +60,7 @@ const ChatPage = () => {
       setInputText('');
       updateMessages(newMessage);
 
-      onTextSend(inputText, messages, chattingWith?.userId, userData)
+      onTextSend(inputText, messages, chattingWith?.userId, userData, isAI)
         .then(() => {})
         .catch((error) => {
           console.error('Error sending message:', error);
@@ -72,6 +74,16 @@ const ChatPage = () => {
 
   const handleFilePickerClose = () => {
     setIsFilePickerVisible(false);
+  };
+
+  const getAvatar = (item) => {
+    if (!item.avatar) {
+      return require('../assets/icon.png');
+    }
+    if (Array.isArray(item.avatar)) {
+      return {uri : item.avatar[0]};
+    }
+    return {uri : item.avatar};
   };
 
   const renderInputToolbar = () => {
@@ -99,7 +111,7 @@ const ChatPage = () => {
     return (
       <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#ddd' }}>
         <Image
-          source={{ uri: "https://picsum.photos/200/300" }}
+          source={getAvatar(chattingWith)}
           style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }}
         />
         <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{chattingWith?.firstName} {chattingWith?.lastName}</Text>

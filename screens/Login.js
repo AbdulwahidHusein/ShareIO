@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { Text, View, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { Text, View, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, Alert, SafeAreaView, Image, StyleSheet } from 'react-native';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { AppContext } from '../AppContext';
@@ -9,9 +9,8 @@ const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError]= useState(false);
+  const [error, setError] = useState('');
   const { setUserData } = useContext(AppContext);
-  
 
   const handleLogin = async () => {
     setLoading(true);
@@ -28,7 +27,7 @@ const Login = ({ navigation }) => {
 
       if (querySnapshot.empty) {
         setLoading(false);
-        Alert.alert('Error', 'User not found in Firestore');
+        setError('User not found in Firestore');
         return;
       }
 
@@ -36,96 +35,189 @@ const Login = ({ navigation }) => {
       setUserData(userData);
 
       setLoading(false);
-      navigation.navigate('ProfilePage'); 
+      navigation.navigate('ProfilePage');
     } catch (error) {
       setLoading(false);
-      setError(true);
-      Alert.alert('Login Error', error.message);
+      setError(error.message);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
-      <View style={styles.formContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          onChangeText={(text) => {setEmail(text); setError(false)}}
-          value={email}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          onChangeText={(text) => {setPassword(text), setError(false)}}
-          value={password}
-          secureTextEntry
-        />
-        {loading ? (
-          <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />
-        ) : (
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.buttonText}>Login</Text>
+    <ScrollView>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#e8ecf4' }}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Image
+              source={require('../assets/appicon.jpg')}
+              style={styles.headerImg}
+              resizeMode="contain"
+            />
+            <Text style={styles.title}>
+              Sign in to <Text style={{ color: '#075eec' }}>ShareIO</Text>
+            </Text>
+            <Text style={styles.subtitle}>
+              Get access to your messages
+            </Text>
+          </View>
+          <View style={styles.form}>
+            <View style={styles.input}>
+              <Text style={styles.inputLabel}>Email address</Text>
+              <TextInput
+                autoCapitalize="none"
+                autoCorrect={false}
+                clearButtonMode="while-editing"
+                keyboardType="email-address"
+                onChangeText={email =>{ setEmail(email); setError("")}}
+                placeholder="your email"
+                placeholderTextColor="#6b7280"
+                style={styles.inputControl}
+                value={email}
+              />
+            </View>
+            <View style={styles.input}>
+              <Text style={styles.inputLabel}>Password</Text>
+              <TextInput
+                autoCorrect={false}
+                clearButtonMode="while-editing"
+                onChangeText={password => {setPassword(password); setError("")}}
+                placeholder="********"
+                placeholderTextColor="#6b7280"
+                style={styles.inputControl}
+                secureTextEntry={true}
+                value={password}
+              />
+            </View>
+            <View style={styles.formAction}>
+              <TouchableOpacity onPress={handleLogin}>
+                <View style={styles.btn}>
+                  {loading ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.btnText}>Sign in</Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+            </View>
+            {error ? (
+              <Text style={[styles.formLink, { color: 'red' }]}>{error}</Text>
+            ) : (
+              <Text style={styles.formLink}>Forgot password?</Text>
+            )}
+          </View>
+          <TouchableOpacity
+            onPress={() => {
+              navigation.navigate('Registration');
+            }}
+            style={{ marginTop: 'auto' }}
+          >
+            <Text style={styles.formFooter}>
+              Don't have an account?{' '}
+              <Text style={{ textDecorationLine: 'underline' }}>Sign up</Text>
+            </Text>
           </TouchableOpacity>
-        )}
-      </View>
-      {error && <Text style={styles.Error}>Invalid login credentials</Text>}
-      <TouchableOpacity onPress={() => navigation.navigate('Registration')}>
-        <Text style={styles.registerText}>Don't have an account? Register</Text>
-      </TouchableOpacity>
-    </View>
+        </View>
+      </SafeAreaView>
+    </ScrollView>
   );
 };
 
-const styles = {
+export default Login;
+
+
+const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    paddingVertical: 24,
+    paddingHorizontal: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 30,
+    fontSize: 31,
+    fontWeight: '700',
+    color: '#1D2A32',
+    marginBottom: 6,
   },
-  formContainer: {
-    width: '80%',
+  subtitle: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#929292',
   },
-  input: {
-    height: 40,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    paddingLeft: 10,
-    marginBottom: 20,
-    backgroundColor: '#fff',
+  /** Header */
+  header: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 36,
   },
-  button: {
-    backgroundColor: '#007bff',
-    borderRadius: 5,
-    paddingVertical: 10,
+  headerImg: {
+    width: 80,
+    height: 80,
+    alignSelf: 'center',
+    marginBottom: 36,
   },
-  buttonText: {
-    color: '#fff',
+  /** Form */
+  form: {
+    marginBottom: 24,
+    paddingHorizontal: 24,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
+  },
+  formAction: {
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  formLink: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#075eec',
     textAlign: 'center',
-    fontWeight: 'bold',
-    fontSize: 16,
   },
-  loader: {
-    marginVertical: 20,
+  formFooter: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#222',
+    textAlign: 'center',
+    letterSpacing: 0.15,
   },
-  registerText: {
-    marginTop: 20,
-    color: '#007bff',
-    fontSize: 14,
+  /** Input */
+  input: {
+    marginBottom: 16,
   },
-  Error:{
-    marginTop: 20,
-    fontSize: 16,
-    color: '#8a0c06',
-
-  }
-};
-
-export default Login;
+  inputLabel: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#222',
+    marginBottom: 8,
+  },
+  inputControl: {
+    height: 50,
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#222',
+    borderWidth: 1,
+    borderColor: '#C9D3DB',
+    borderStyle: 'solid',
+  },
+  /** Button */
+  btn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 30,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    backgroundColor: '#075eec',
+    borderColor: '#075eec',
+  },
+  btnText: {
+    fontSize: 18,
+    lineHeight: 26,
+    fontWeight: '600',
+    color: '#fff',
+  },
+});
