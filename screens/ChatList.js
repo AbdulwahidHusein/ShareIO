@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { TouchableOpacity, Text, View, FlatList, Image, StyleSheet, TextInput } from 'react-native';
+import { TouchableOpacity, Text, View, FlatList, Image, StyleSheet, TextInput, Alert } from 'react-native';
 import { collection, query, onSnapshot, where, getDocs } from 'firebase/firestore';
 import { database } from '../firebaseConfig';
 import { AppContext } from '../AppContext';
@@ -8,10 +8,35 @@ import { useNavigation } from '@react-navigation/native';
 const ChatList = () => {
   const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const { setChattingWith } = useContext(AppContext);
+  const { setChattingWith, userData } = useContext(AppContext);
+  const [currentPriority, setCurrentPriority] = useState(0);
   const navigation = useNavigation();
   const chatBotId = "WyJen7wgwwXU8FvdHaKWyJen7wgwwXU8FvdHaKrdvs7N2Z2";
 
+
+  const getUserByEmail = async (email) => {
+    const userCollectionRef = collection(database, 'users');
+    const querySnapshot = await getDocs(query(userCollectionRef, where('email', '==', email)));
+    if (querySnapshot.empty) {
+      return null; 
+    } else {
+      const doc =  querySnapshot.docs[0];
+      setCurrentPriority(currentPriority + 1);
+      return (
+        {
+          _id: doc.id,
+          firstName: doc.data().firstName,
+          lastName: doc.data().lastName,
+          userId: doc.data().userId,
+          avatar: doc.data().avatar,
+          phoneNumber: doc.data().phoneNumber,
+          email : doc.data().email,
+          priprity: doc.data().userId == chatBotId ? 100 : currentPriority
+        }
+      )
+    }
+  };
+  
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -23,6 +48,7 @@ const ChatList = () => {
           const data = doc.data();
           chatUserIds.add(data.user._id);
           chatUserIds.add(data.receiver._id);
+         
         });
 
         const userCollectionRef = collection(database, 'users');
@@ -40,14 +66,13 @@ const ChatList = () => {
               avatar: doc.data().avatar,
               phoneNumber: doc.data().phoneNumber,
               email : doc.data().email,
+              priprity: doc.data().userId == chatBotId ? 100 : currentPriority
             });
           });
         }
 
         const sortedUsers = fetchedUsers.sort((a, b) => {
-          if (a.userId === chatBotId) return -1;
-          if (b.userId === chatBotId) return 1;
-          return 0;
+          return  - a.priprity + b.priprity;
         });
 
         setUsers(sortedUsers);
@@ -82,6 +107,21 @@ const ChatList = () => {
     return { uri: item.avatar };
   };
 
+   const searchByEmail = async () => {
+    if (!searchQuery) {
+      Alert.alert("Email is required for search.");
+      return;
+    }
+    const user = await getUserByEmail(searchQuery);
+    if (user) {
+      if (user && !users.filter(u => u._id === user._id).length) {
+        setUsers([...users, user]);
+      }
+    } else {
+      Alert.alert("User with this email not found.");
+    }
+  };
+
   const renderItem = ({ item }) => (
     <TouchableOpacity style={styles.userContainer} onPress={() => handleUserClick(item)}>
       <Image source={getAvatar(item)} style={styles.avatar} />
@@ -94,18 +134,26 @@ const ChatList = () => {
 
   const filteredUsers = users.filter(user =>
     `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.phoneNumber.includes(searchQuery) || user.email.toLowerCase().includes(searchQuery.toLowerCase())
+    user.phoneNumber.includes(searchQuery) || user.email.toLowerCase().includes(searchQuery.toLowerCase()) 
   );
 
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Chats</Text>
-      <TextInput
+      <View style={styles.searchBarContainer}>
+        <TextInput
         style={styles.searchBar}
         placeholder="Search"
         value={searchQuery}
         onChangeText={setSearchQuery}
       />
+      <TouchableOpacity 
+      onPress={searchByEmail}
+      style={styles.searchButton}>
+      <Text style={styles.searchButtonText}>Search</Text>
+      </TouchableOpacity>
+      </View>
+     
       <FlatList
         data={filteredUsers}
         keyExtractor={(item) => item._id}
@@ -132,14 +180,30 @@ const styles = StyleSheet.create({
     borderBottomColor: '#dddddd',
     paddingBottom: 10,
   },
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   searchBar: {
+    flex: 1,
     height: 40,
     borderColor: '#dddddd',
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 10,
-    marginBottom: 20,
     backgroundColor: '#ffffff',
+  },
+  searchButton: {
+    marginLeft: 10,
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  searchButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
   },
   listContainer: {
     paddingTop: 8,
