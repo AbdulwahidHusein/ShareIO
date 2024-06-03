@@ -9,7 +9,7 @@ import { generate } from '../api';
 
 
 
-export const onTextSend = async (inputText, messages, chattingWith, userData, isAI) => {
+export const onTextSend = async (inputText, messages, chattingWith, userData, setChatBotTyping) => {
   const message = {
     text: inputText,
     user: {
@@ -24,21 +24,26 @@ export const onTextSend = async (inputText, messages, chattingWith, userData, is
 
   try {
     await addDoc(collection(database, 'chats'), message);
-    if (chattingWith === "WyJen7wgwwXU8FvdHaKWyJen7wgwwXU8FvdHaKrdvs7N2Z2"){
-
+    if (chattingWith === "WyJen7wgwwXU8FvdHaKWyJen7wgwwXU8FvdHaKrdvs7N2Z2") {
+      setChatBotTyping(true);
       const response = await generate(inputText);
       const message = {
-        text: response,
-        user: {
-          _id: chattingWith,
+        user : {
+          _id :  chattingWith
         },
-        receiver: {
-          _id: userData.userId,
+        receiver : {
+          _id : userData.userId
         },
         createdAt: new Date(),
-        files: [], 
-      };
-      await addDoc(collection(database, 'chats'), message);
+        files: [], // Array to store file paths or references
+        text: response
+
+      }
+      addDoc(collection(database, 'chats'), message).then (
+        () => {
+          setChatBotTyping(false);
+        }
+      )
     }
   } catch (error) {
     console.error('Error sending message:', error);

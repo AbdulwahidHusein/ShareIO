@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { TouchableOpacity, Text, View, FlatList, Image, StyleSheet, TextInput } from 'react-native';
-import { collection, query, onSnapshot } from 'firebase/firestore';
+import { collection, query, onSnapshot, where, getDocs } from 'firebase/firestore';
 import { database } from '../firebaseConfig';
 import { AppContext } from '../AppContext';
 import { useNavigation } from '@react-navigation/native';
@@ -13,28 +13,50 @@ const ChatList = () => {
   const chatBotId = "WyJen7wgwwXU8FvdHaKWyJen7wgwwXU8FvdHaKrdvs7N2Z2";
 
   useEffect(() => {
-    const collectionRef = collection(database, 'users');
-    const q = query(collectionRef);
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const fetchedUsers = querySnapshot.docs.map((doc) => ({
-        _id: doc.id,
-        firstName: doc.data().firstName,
-        lastName: doc.data().lastName,
-        userId: doc.data().userId,
-        avatar: doc.data().avatar,
-        phoneNumber: doc.data().phoneNumber,
-      }));
+    const fetchUsers = async () => {
+      try {
+        const chatCollectionRef = collection(database, 'chats');
+        const chatSnapshot = await getDocs(chatCollectionRef);
 
-      const sortedUsers = fetchedUsers.sort((a, b) => {
-        if (a.userId === chatBotId) return -1;
-        if (b.userId === chatBotId) return 1;
-        return 0;
-      });
+        const chatUserIds = new Set();
+        chatSnapshot.forEach((doc) => {
+          const data = doc.data();
+          chatUserIds.add(data.user._id);
+          chatUserIds.add(data.receiver._id);
+        });
 
-      setUsers(sortedUsers);
-    });
+        const userCollectionRef = collection(database, 'users');
+        const userQueries = [...chatUserIds].map(userId => query(userCollectionRef, where('userId', '==', userId)));
+        
+        const fetchedUsers = [];
+        for (const userQuery of userQueries) {
+          const userSnapshot = await getDocs(userQuery);
+          userSnapshot.forEach((doc) => {
+            fetchedUsers.push({
+              _id: doc.id,
+              firstName: doc.data().firstName,
+              lastName: doc.data().lastName,
+              userId: doc.data().userId,
+              avatar: doc.data().avatar,
+              phoneNumber: doc.data().phoneNumber,
+              email : doc.data().email,
+            });
+          });
+        }
 
-    return unsubscribe;
+        const sortedUsers = fetchedUsers.sort((a, b) => {
+          if (a.userId === chatBotId) return -1;
+          if (b.userId === chatBotId) return 1;
+          return 0;
+        });
+
+        setUsers(sortedUsers);
+      } catch (error) {
+        console.error("Error fetching users: ", error);
+      }
+    };
+
+    fetchUsers();
   }, []);
 
   const handleUserClick = (user) => {
@@ -72,7 +94,7 @@ const ChatList = () => {
 
   const filteredUsers = users.filter(user =>
     `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.phoneNumber.includes(searchQuery)
+    user.phoneNumber.includes(searchQuery) || user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -82,7 +104,7 @@ const ChatList = () => {
         style={styles.searchBar}
         placeholder="Search"
         value={searchQuery}
-        onChangeText={()=>{}}
+        onChangeText={setSearchQuery}
       />
       <FlatList
         data={filteredUsers}
