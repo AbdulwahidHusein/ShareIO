@@ -40,24 +40,27 @@ const ChatList = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const chatCollectionRef = collection(database, 'chats');
-        const chatSnapshot = await getDocs(chatCollectionRef);
+        // const chatCollectionRef = collection(database, 'chats');
+        // const chatSnapshot = await getDocs(chatCollectionRef);
 
-        const chatUserIds = new Set();
-        chatSnapshot.forEach((doc) => {
-          const data = doc.data();
-          chatUserIds.add(data.user._id);
-          chatUserIds.add(data.receiver._id);
+        // const chatUserIds = new Set();
+        // chatSnapshot.forEach((doc) => {
+        //   const data = doc.data();
+        //   chatUserIds.add(data.user._id);
+        //   chatUserIds.add(data.receiver._id);
          
-        });
+        // });
 
-        const userCollectionRef = collection(database, 'users');
-        const userQueries = [...chatUserIds].map(userId => query(userCollectionRef, where('userId', '==', userId)));
+        // const userCollectionRef = collection(database, 'users');
+        // const userQueries = [...chatUserIds].map(userId => query(userCollectionRef, where('userId', '==', userId)));
         
         const fetchedUsers = [];
-        for (const userQuery of userQueries) {
-          const userSnapshot = await getDocs(userQuery);
-          userSnapshot.forEach((doc) => {
+
+        const userCollection = collection(database, 'users');
+        const snapshot = await getDocs(userCollection);
+
+        snapshot.forEach(
+          (doc) =>{
             fetchedUsers.push({
               _id: doc.id,
               firstName: doc.data().firstName,
@@ -68,8 +71,25 @@ const ChatList = () => {
               email : doc.data().email,
               priprity: doc.data().userId == chatBotId ? 100 : currentPriority
             });
-          });
-        }
+          }
+        )
+
+
+        // for (const userQuery of userQueries) {
+        //   const userSnapshot = await getDocs(userQuery);
+        //   userSnapshot.forEach((doc) => {
+        //     fetchedUsers.push({
+        //       _id: doc.id,
+        //       firstName: doc.data().firstName,
+        //       lastName: doc.data().lastName,
+        //       userId: doc.data().userId,
+        //       avatar: doc.data().avatar,
+        //       phoneNumber: doc.data().phoneNumber,
+        //       email : doc.data().email,
+        //       priprity: doc.data().userId == chatBotId ? 100 : currentPriority
+        //     });
+        //   });
+        // }
 
         const sortedUsers = fetchedUsers.sort((a, b) => {
           return  - a.priprity + b.priprity;
