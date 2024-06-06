@@ -10,6 +10,8 @@ const Welcome = ({ navigation }) => {
         onPress={() => navigation.navigate('Login')}
       /> */}
     </View>
+
+    
   );
 };
 
