@@ -8,6 +8,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web"
   },
+  
   "dependencies": {
     "@expo/config": "^9.0.1",
     "@expo/metro-config": "^0.18.4",
