@@ -3,9 +3,10 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 // const dotenv = require("dotenv");
 // dotenv.config();
 
+// api ket
 const gemini_api_key ="AIzaSyDH1vsvIubkoFdknuSR-YkoVSbv7nJtiuc";
 
-
+// getinf the ai 
 const googleAI = new GoogleGenerativeAI(gemini_api_key);
 
 const geminiConfig = {
@@ -20,7 +21,7 @@ const geminiModel = googleAI.getGenerativeModel({
   model: "gemini-pro",
   geminiConfig,
 });
-
+// feaching result fron api
 export const generate = async (text) => {
   try {
     const prompt = text;
