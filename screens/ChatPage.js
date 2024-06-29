@@ -2,26 +2,31 @@ import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { TouchableOpacity, Text, View, TextInput, FlatList, Image, Alert, Modal } from 'react-native';
 import { collection, addDoc, orderBy, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, database } from '../firebaseConfig';
-import { AntDesign, MaterialIcons } from '@expo/vector-icons'; // Import MaterialIcons
+import { AntDesign, MaterialIcons } from '@expo/vector-icons';
 import { AppContext } from '../AppContext';
 import FilePickerScreen from '../components/ImagePickerComp';
-import { onTextSend, onFileSend } from '../screens/utils';
+import { onTextSend, onFileSend, handleDownload } from '../screens/utils';
+import RenderMessageItem from '../components/renderMessageItem';
 
-const ChatPage = () => {
+const ChatPage = ({ isAiTab }) => {
   const [isFilePickerVisible, setIsFilePickerVisible] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
+  const [isLoading, setIsloading] = useState(false);
+  const { chattingWith, setChattingWith, userData } = useContext(AppContext);
+  const [chatBotTyping, setChatBotTyping] = useState(false);
 
-  const { chattingWith, userData } = useContext(AppContext);
+  const isAI = chattingWith.userId === "WyJen7wgwwXU8FvdHaKWyJen7wgwwXU8FvdHaKrdvs7N2Z2";
 
   useEffect(() => {
     const collectionRef = collection(database, 'chats');
+    setIsloading(true);
     const unsubscribe = onSnapshot(
       query(
         collectionRef,
         orderBy('createdAt', 'desc'),
-        where('receiver._id', 'in', [chattingWith, userData.userId]),
-        where('user._id', 'in', [chattingWith, userData.userId])
+        where('receiver._id', 'in', [chattingWith?.userId || "none", userData?.userId || "none"]),
+        where('user._id', 'in', [chattingWith?.userId || "none", userData?.userId || "none"])
       ),
       (querySnapshot) => {
         const allMessages = querySnapshot.docs.map((doc) => ({
@@ -30,6 +35,7 @@ const ChatPage = () => {
           createdAt: doc.data().createdAt.toDate(),
         }));
         setMessages(allMessages);
+        setIsloading(false);
       }
     );
 
@@ -47,20 +53,20 @@ const ChatPage = () => {
       const newMessage = {
         _id: 'temp_' + Math.random().toString(),
         text: inputText,
-        user: { _id: userData.userId },
+        user: { _id: userData?.userId },
         createdAt: new Date(),
         files: [],
       };
       setInputText('');
       updateMessages(newMessage);
 
-      onTextSend(inputText, messages, chattingWith, userData)
+      onTextSend(inputText, messages, chattingWith?.userId, userData, setChatBotTyping)
         .then(() => {})
         .catch((error) => {
           console.error('Error sending message:', error);
         });
     }
-  }, [inputText, messages, chattingWith, userData, updateMessages]);
+  }, [inputText, messages, chattingWith?.userId, userData, updateMessages]);
 
   const handleFileUploadButton = () => {
     setIsFilePickerVisible(true);
@@ -70,16 +76,38 @@ const ChatPage = () => {
     setIsFilePickerVisible(false);
   };
 
+  const getAvatar = (item) => {
+    if (!item.avatar) {
+      return require('../assets/icon.png');
+    }
+    if (Array.isArray(item.avatar)) {
+      return { uri: item.avatar[0] };
+    }
+    return { uri: item.avatar };
+  };
+
   const renderInputToolbar = () => {
     return (
-      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10, backgroundColor: '#F6F7FB' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10, backgroundColor: '#f6f6f6' }}>
         <TouchableOpacity onPress={handleFileUploadButton}>
-          <AntDesign name="upload" size={24} color="#C5C5C7" style={{ marginRight: 10 }} />
+          <AntDesign name="upload" size={24} color="#8c8c8c" style={{ marginRight: 10 }} />
         </TouchableOpacity>
         <TextInput
           multiline={true}
           placeholder="Type a message..."
-          style={{ flex: 1, backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 15 }}
+          style={{
+            flex: 1,
+            backgroundColor: '#fff',
+            borderRadius: 20,
+            paddingHorizontal: 15,
+            fontSize: 16,
+            color: '#333',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 2,
+          }}
           value={inputText}
           onChangeText={setInputText}
           onSubmitEditing={textSendCallback}
@@ -87,70 +115,63 @@ const ChatPage = () => {
         <TouchableOpacity onPress={textSendCallback}>
           <AntDesign name="arrowup" size={24} color="#f57c00" />
         </TouchableOpacity>
-        {/* Profile Icon */}
-        <TouchableOpacity>
-          <MaterialIcons name="account-circle" size={24} color="#000" style={{ marginLeft: 10 }} />
-        </TouchableOpacity>
       </View>
     );
   };
 
-  const renderMessageItem = ({ item }) => {
-    const isSender = item.user._id === userData.userId;
-    const isImageFile = item.files.some((file) => {
-      return file.includes('jpeg?alt=') || file.includes('png?alt=');
-    });
-
-    // Check if the message is in-progress (not yet sent)
-    const isInProgress = item._id.startsWith('temp_');
-
-    const messageTime = item.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
+  const renderProfileHeader = () => {
     return (
-      <View style={{ alignItems: isSender ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
-        <View
-          style={{
-            maxWidth: '80%',
-            borderRadius: 10,
-            backgroundColor: isSender ? '#DCF8C6' : '#F1F0F0',
-            paddingHorizontal: 10,
-            paddingVertical: 5,
-          }}
-        >
-          {item.files.length > 0 && isImageFile? (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-              {item.files.map((file, index) => (
-                <Image key={index} source={{ uri: file }} style={{ width: 80, height: 80, margin: 5 }} />
-              ))}
-            </View>
-          ) : null}
-          {item.files.length > 0 && !isImageFile ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <AntDesign name="file1" size={24} color="black" style={{ marginRight: 5 }} />
-              <Text>{item.files.join(', ')}</Text>
-            </View>
-          ) : null}
-          <Text style={{ color: isSender ? 'black' : 'gray', marginTop: 5 }}>{item.text}</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            {isInProgress && <AntDesign name="clockcircleo" size={16} color="orange" />}
-            {!isInProgress && isSender && <AntDesign name="checkcircle" size={16} color="green" />}
-            <Text style={{ marginLeft: 5, color: 'gray', fontSize: 12 }}>{messageTime}</Text>
-          </View>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          padding: 10,
+          backgroundColor: '#fff',
+          borderBottomWidth: 1,
+          borderBottomColor: '#f0f0f0',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 2,
+        }}
+      >
+        <Image
+          source={getAvatar(chattingWith)}
+          style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }}
+        />
+        <View>
+          <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333' }}>
+            {chattingWith?.firstName} {chattingWith?.lastName}
+          </Text>
+          <Text style={{ color: '#8c8c8c', fontSize: 14 }}>5m Ago</Text>
         </View>
       </View>
     );
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: '#f6f6f6' }}>
+      {renderProfileHeader()}
       <FlatList
         data={messages.sort((a, b) => b.createdAt - a.createdAt)}
-        renderItem={renderMessageItem}
+        renderItem={({ item }) => <RenderMessageItem item={item} />}
         keyExtractor={(item) => item._id}
         inverted
+        contentContainerStyle={{ paddingVertical: 10 }}
       />
+      {chatBotTyping && (
+        <View style={{ marginLeft: 10, marginBottom: 10 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#8c8c8c' }}>Typing...</Text>
+        </View>
+      )}
       <Modal visible={isFilePickerVisible} animationType="slide">
-        <FilePickerScreen onSend={handleFilePickerClose} chattingWith={chattingWith} userId={userData.userId} updateMessages={updateMessages} />
+        <FilePickerScreen
+          onSend={handleFilePickerClose}
+          chattingWith={chattingWith?.userId}
+          userId={userData?.userId}
+          updateMessages={updateMessages}
+        />
       </Modal>
       {renderInputToolbar()}
     </View>

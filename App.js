@@ -1,22 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, TouchableOpacity, StyleSheet, PanResponder, Animated } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Text, Alert } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-
+import { AppProvider, AppContext } from './AppContext';
 import ChatPage from './screens/ChatPage';
 import Login from './screens/Login';
 import Registration from './screens/Registeration';
 import ProfilePage from './screens/Profile';
 import ChatList from './screens/ChatList';
-
-import { AppProvider } from './AppContext';
+import Welcome from './screens/Welcome'; // Import the Welcome screen
+import { auth, database } from "./firebaseConfig";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const MainTabs = () => {
+  const { setChattingWith } = useContext(AppContext);
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -24,7 +25,7 @@ const MainTabs = () => {
           let iconName;
 
           if (route.name === 'ChatList') {
-            iconName = 'message-square';
+            iconName = 'users';
           } else if (route.name === 'Profile') {
             iconName = 'user';
           } else if (route.name === 'Registration') {
@@ -37,6 +38,7 @@ const MainTabs = () => {
 
           return <Feather name={iconName} size={size} color={color} />;
         },
+        headerShown: false,
       })}
       tabBarOptions={{
         activeTintColor: '#007AFF',
@@ -49,75 +51,89 @@ const MainTabs = () => {
         },
       }}>
       <Tab.Screen name="ChatList" component={ChatList} />
-      <Tab.Screen name="Profile" component={ProfilePage} />
-      <Tab.Screen name="Registration" component={Registration} />
-      <Tab.Screen name="Chat" component={ChatPage} />
-      <Tab.Screen name="Login" component={Login} />
-      
+      <Tab.Screen name="Chat" component={ChatPage} options={{
+        headerRight: () => (
+          <TouchableOpacity>
+            <Feather name="more-vertical" size={24} color="#007AFF" />
+          </TouchableOpacity>
+        ),
+      }} />
+      <Tab.Screen name="Profile" component={ProfilePage} options={{
+        headerRight: () => (
+          <TouchableOpacity>
+            <Feather name="edit" size={24} color="#007AFF" />
+          </TouchableOpacity>
+        ),
+      }} />
+      <Tab.Screen
+        name="Ai"
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="cpu" size={24} color={color} />
+          )
+        }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+
+            const AI = {
+              firstName: "chat",
+              lastName: "bot",
+              userId: "WyJen7wgwwXU8FvdHaKWyJen7wgwwXU8FvdHaKrdvs7N2Z2",
+              _id: "AIchatBotWyJen7wgwwXU8FvdHaKrdvs7N2Z2\"",
+              avatar: "https://firebasestorage.googleapis.com/v0/b/shareio-7bca8.appspot.com/o/pngtree-chatbot-robot-concept-chat-bot-png-image_5632381.png?alt=media&token=5ba685a2-67c0-4bcc-ac3e-618d3cdb704c",
+              phoneNumber: "",
+            }
+            setChattingWith(AI);
+            navigation.navigate('Chat');
+          },
+        })}
+      >
+        {() => <ChatPage isAiTab={true} />}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 };
 
 const App = () => {
-  const [sidebarVisible, setSidebarVisible] = useState(false);
-  const [pan] = useState(new Animated.ValueXY());
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const toggleSidebar = () => {
-    setSidebarVisible(!sidebarVisible);
-  };
+  const [onWelcome, setWelcome] = useState(true);
 
-  const panResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onPanResponderMove: Animated.event([null, { dx: pan.x }]),
-    onPanResponderRelease: (e, gesture) => {
-      if (gesture.moveX < 100) {
-        if (gesture.dx < -50) {
-          toggleSidebar();
-        } else {
-          Animated.spring(pan, {
-            toValue: { x: 0, y: 0 },
-            friction: 4,
-            useNativeDriver: false,
-          }).start();
-        }
-      } else {
-        if (gesture.dx > 50) {
-          toggleSidebar();
-        } else {
-          Animated.spring(pan, {
-            toValue: { x: -200, y: 0 },
-            friction: 4,
-            useNativeDriver: false,
-          }).start();
-        }
-      }
-    },
+  useEffect(
+    ()=>{
+      setTimeout(() => {
+        setWelcome(false)
+      }, 4000);
+    }
+  )
+
+  auth.onAuthStateChanged((user) => {
+    if (user) {
+      setIsLoggedIn(true);
+    } else {
+      setIsLoggedIn(false);
+    }
   });
-
-  const sidebarStyle = {
-    transform: [
-      {
-        translateX: pan.x.interpolate({
-          inputRange: [-200, 0],
-          outputRange: [-200, 0],
-          extrapolate: 'clamp',
-        }),
-      },
-    ],
-  };
 
   return (
     <AppProvider>
       <NavigationContainer>
         <View style={styles.container}>
-          <Animated.View style={[styles.sidebar, sidebarStyle]}>
-            {/* Add your sidebar content here */}
-          </Animated.View>
-          <TouchableOpacity style={styles.sidebarButton} onPress={toggleSidebar}>
-            <Feather name={sidebarVisible ? 'chevron-left' : 'menu'} size={24} color="black" />
-          </TouchableOpacity>
           <Stack.Navigator screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="MainTabs" component={MainTabs} />
+            {isLoggedIn ? (
+              <>
+                <Stack.Screen name="MainTabs" component={MainTabs} />
+              </>
+            ) : (
+              <>
+              {onWelcome && 
+                <Stack.Screen name="Welcome" component={Welcome} />
+              }
+                <Stack.Screen name="Login" component={Login} />
+                <Stack.Screen name="Registration" component={Registration} />
+              </>
+            )}
           </Stack.Navigator>
         </View>
       </NavigationContainer>
